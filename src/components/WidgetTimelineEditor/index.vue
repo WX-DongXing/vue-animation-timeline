@@ -20,7 +20,8 @@
     <!-- S content area -->
     <section>
       <div class="widget-timeline-editor__content">
-        <div class="widget-timeline-editor__left"></div>
+        <div class="widget-timeline-editor__left">
+        </div>
         <!-- E widget control panel -->
 
         <div class="widget-timeline-editor__right">
@@ -37,10 +38,13 @@
 
 <script>
 import dayjs from 'dayjs';
-import { defineComponent } from 'vue-demi';
+import { Canvas } from '@antv/g-canvas';
+import {
+  defineComponent, onMounted, watch, ref,
+} from 'vue-demi';
 import SvgIcon from '@/components/SvgIcon.vue';
 import Mixins from '@/utils/mixins.vue';
-import { Canvas } from '@antv/g-canvas';
+import useResize from '@/utils/useResize.ts';
 
 export default defineComponent({
   mixins: [Mixins],
@@ -67,15 +71,84 @@ export default defineComponent({
       },
     },
   },
-  data() {
-    return {
-      ctx: null,
-    };
-  },
-  mounted() {
-    this.ctx = new Canvas({
-      container: 'painter',
-    })
+  setup() {
+    const { rect } = useResize();
+    let painter = ref();
+    let timeRect = ref();
+    let leftPoint = ref();
+    let centerBar = ref();
+    let rightPoint = ref();
+
+    watch(rect, () => {
+      const { width, height } = rect;
+      // change painter size
+      painter.changeSize(width, height);
+
+      // set time rect width
+      timeRect.attr('width', width);
+
+      // set left point default position
+      leftPoint.attr('x', 10);
+
+      // set right point default position
+      rightPoint.attr('x', width - 10);
+
+      // set center bar default position
+      centerBar.attr('width', width - 20);
+    });
+
+    onMounted(() => {
+      const { width, height } = document.getElementById('painter').getBoundingClientRect();
+      // init painter
+      painter = new Canvas({
+        container: 'painter',
+        width,
+        height,
+      });
+
+      timeRect = painter.addShape('rect', {
+        name: 'timeBar',
+        attrs: {
+          x: 0,
+          y: 0,
+          width,
+          height: 20,
+          fill: '#F5F5F6',
+        },
+      });
+
+      leftPoint = painter.addShape('circle', {
+        attrs: {
+          x: 10,
+          y: 10,
+          r: 6,
+          fill: '#757575',
+          lineWidth: 0,
+        },
+      });
+
+      rightPoint = painter.addShape('circle', {
+        attrs: {
+          x: width - 10,
+          y: 10,
+          r: 6,
+          fill: '#757575',
+          lineWidth: 0,
+        },
+      });
+
+      centerBar = painter.addShape('rect', {
+        name: 'timeBar',
+        attrs: {
+          x: 10,
+          y: 4,
+          width: width - 20,
+          height: 12,
+          fill: '#bdbdbd',
+          lineWidth: 0,
+        },
+      });
+    });
   },
 });
 </script>
@@ -107,22 +180,21 @@ export default defineComponent({
   }
 
   &__content {
-    display: flex;
-    flex-flow: row nowrap;
-    justify-content: space-between;
     height: 100%;
     border-top: 1px solid #efefef;
+    overflow: hidden;
   }
 
   &__left {
-    flex: none;
+    float: left;
     width: 320px;
     height: 100%;
     border-right: 1px solid #efefef;
   }
 
   &__right {
-    width: 100%;
+    float: right;
+    width: calc(100% - 321px);
     height: 100%;
   }
 
@@ -159,6 +231,11 @@ export default defineComponent({
       border-radius: 4px;
       padding-left: 6px;
     }
+  }
+
+  #painter {
+    width: 100%;
+    height: 100%;
   }
 }
 </style>
