@@ -1,21 +1,37 @@
 <template>
   <div class="widget-timeline-editor">
+    <!-- S header area -->
     <header>
       <div class="widget-timeline-editor__icons">
         <svg-icon icon-name="play" />
         <svg-icon icon-name="square" />
       </div>
+      <!-- / icon area -->
+
       <div class="widget-timeline-editor__title">
         <span>{{ timeScale }}</span>
         <input type="text" v-model.trim="maxTimeScale">
       </div>
+      <!-- / timescale area -->
+
     </header>
+    <!-- E header area -->
+
+    <!-- S content area -->
     <section>
       <div class="widget-timeline-editor__content">
         <div class="widget-timeline-editor__left"></div>
-        <div class="widget-timeline-editor__right"></div>
+        <!-- E widget control panel -->
+
+        <div class="widget-timeline-editor__right">
+          <div id="painter"></div>
+        </div>
+        <!-- E timeline control panel  -->
+
       </div>
     </section>
+    <!-- E content area -->
+
   </div>
 </template>
 
@@ -24,6 +40,7 @@ import dayjs from 'dayjs';
 import { defineComponent } from 'vue-demi';
 import SvgIcon from '@/components/SvgIcon.vue';
 import Mixins from '@/utils/mixins.vue';
+import { Canvas } from '@antv/g-canvas';
 
 export default defineComponent({
   mixins: [Mixins],
@@ -49,6 +66,16 @@ export default defineComponent({
         }
       },
     },
+  },
+  data() {
+    return {
+      ctx: null,
+    };
+  },
+  mounted() {
+    this.ctx = new Canvas({
+      container: 'painter',
+    })
   },
 });
 </script>
