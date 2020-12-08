@@ -26,6 +26,7 @@ export default function useResize() {
   };
 
   onMounted(() => {
+    resized();
     window.addEventListener('resize', useThrottleFn(resized, 16));
   });
 

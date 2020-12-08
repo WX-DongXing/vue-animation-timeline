@@ -10,6 +10,8 @@
 
       <div class="widget-timeline-editor__title">
         <span>{{ timeScale }}</span>
+        <span>startTime: {{ startTime }}</span>
+        <span>endTime: {{ endTime }}</span>
         <input type="text" v-model.trim="maxTimeScale">
       </div>
       <!-- / timescale area -->
@@ -46,6 +48,7 @@ import {
 import SvgIcon from '@/components/SvgIcon.vue';
 import Mixins from '@/utils/mixins.vue';
 import useResize from '@/utils/useResize.ts';
+import { Mutations } from '@/store';
 
 export default defineComponent({
   mixins: [Mixins],
@@ -65,7 +68,11 @@ export default defineComponent({
         if (pattern.test(time)) {
           const [, mm, ss, SSS] = time.match(pattern);
           const maxTime = +mm * 60 * 1000 + +ss * 1000 + +SSS;
-          this.setMaxTime({ maxTime });
+          if (maxTime >= this.endTime) {
+            this.setMaxTime({ maxTime });
+          } else {
+            this.setMaxTime({ maxTime: this.endTime });
+          }
         } else {
           this.setMaxTime({ maxTime: this.maxTime });
         }
@@ -83,6 +90,12 @@ export default defineComponent({
     let rightPoint = ref();
     let leftPosition = ref(0);
     let rightPosition = ref(0);
+    let record = reactive({
+      startTime: 0,
+      center: 0,
+      endTime: 0,
+    });
+
     let allowLeftMove = false;
     let allowRightMove = false;
     let allowCenterMove = false;
@@ -105,7 +118,7 @@ export default defineComponent({
         x: leftPosition,
       }, {
         delay: 0,
-        duration: 150,
+        duration: 50,
         easing: 'easeLinear',
       });
 
@@ -114,7 +127,7 @@ export default defineComponent({
         x: rightPosition,
       }, {
         delay: 0,
-        duration: 150,
+        duration: 50,
         easing: 'easeLinear',
       });
 
@@ -124,7 +137,7 @@ export default defineComponent({
         x: leftPosition,
       }, {
         delay: 0,
-        duration: 150,
+        duration: 50,
         easing: 'easeLinear',
       });
     };
@@ -198,24 +211,55 @@ export default defineComponent({
       rightPoint.on('mousedown', () => {
         allowRightMove = true;
       });
-      centerBar.on('mousedown', () => {
+      centerBar.on('mousedown', ({ x }) => {
         allowCenterMove = true;
+        record = {
+          startTime: state.startTime,
+          center: x,
+          endTime: state.endTime,
+        };
       });
       painter.on('mouseup', () => {
         allowLeftMove = false;
         allowRightMove = false;
         allowCenterMove = false;
       });
-      painter.on('mousemove', (event) => {
-        if (allowLeftMove) {
-          console.log(event);
+      painter.on('mousemove', ({ x }) => {
+        if (allowLeftMove && x >= 10 && x <= rightPosition) {
+          const rate = (x - 10) / rect.width;
+          store.commit(Mutations.SET_STATE, {
+            startTime: state.maxTime * rate,
+          });
         }
-        if (allowRightMove) {
-          console.log(event);
+        if (allowRightMove && x <= rect.width - 10 && x >= leftPosition) {
+          const rate = (x + 10) / rect.width;
+          store.commit(Mutations.SET_STATE, {
+            endTime: state.maxTime * rate,
+          });
         }
-        if (allowCenterMove) {
-          console.log(event);
+        if (allowCenterMove && leftPosition >= 10 && rightPosition <= rect.width - 10) {
+          const distanceDiff = x - record.center;
+          const timeDiff = (distanceDiff / rect.width) * state.maxTime;
+          if (record.startTime + timeDiff <= 0) {
+            store.commit(Mutations.SET_STATE, {
+              startTime: 0,
+              endTime: record.endTime - record.startTime,
+            });
+            return false;
+          }
+          if (record.endTime + timeDiff >= state.maxTime) {
+            store.commit(Mutations.SET_STATE, {
+              startTime: state.maxTime - (record.endTime - record.startTime),
+              endTime: state.maxTime,
+            });
+            return false;
+          }
+          store.commit(Mutations.SET_STATE, {
+            startTime: record.startTime + timeDiff,
+            endTime: record.endTime + timeDiff,
+          });
         }
+        return false;
       });
     });
   },
