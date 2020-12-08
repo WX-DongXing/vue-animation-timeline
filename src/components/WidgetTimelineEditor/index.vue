@@ -41,6 +41,7 @@ import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
   defineComponent, onMounted, watch, ref,
+  inject, reactive,
 } from 'vue-demi';
 import SvgIcon from '@/components/SvgIcon.vue';
 import Mixins from '@/utils/mixins.vue';
@@ -72,29 +73,68 @@ export default defineComponent({
     },
   },
   setup() {
+    const store = inject('store');
+    const state = reactive(store.state);
     const { rect } = useResize();
     let painter = ref();
     let timeRect = ref();
     let leftPoint = ref();
     let centerBar = ref();
     let rightPoint = ref();
+    let leftPosition = ref(0);
+    let rightPosition = ref(0);
+    let allowLeftMove = false;
+    let allowRightMove = false;
+    let allowCenterMove = false;
 
-    watch(rect, () => {
+    const calc = () => {
       const { width, height } = rect;
+      const { maxTime, startTime, endTime } = state;
+      const unitWidth = width / maxTime;
+      leftPosition = startTime * unitWidth + 10;
+      rightPosition = endTime * unitWidth - 10;
+
       // change painter size
       painter.changeSize(width, height);
 
       // set time rect width
       timeRect.attr('width', width);
 
-      // set left point default position
-      leftPoint.attr('x', 10);
+      // set left point x position
+      leftPoint.animate({
+        x: leftPosition,
+      }, {
+        delay: 0,
+        duration: 150,
+        easing: 'easeLinear',
+      });
 
-      // set right point default position
-      rightPoint.attr('x', width - 10);
+      // set right point x position
+      rightPoint.animate({
+        x: rightPosition,
+      }, {
+        delay: 0,
+        duration: 150,
+        easing: 'easeLinear',
+      });
 
-      // set center bar default position
-      centerBar.attr('width', width - 20);
+      // set center bar width, x
+      centerBar.animate({
+        width: rightPosition - leftPosition,
+        x: leftPosition,
+      }, {
+        delay: 0,
+        duration: 150,
+        easing: 'easeLinear',
+      });
+    };
+
+    watch(rect, () => {
+      calc();
+    });
+
+    watch(state, () => {
+      calc();
     });
 
     onMounted(() => {
@@ -124,6 +164,7 @@ export default defineComponent({
           r: 6,
           fill: '#757575',
           lineWidth: 0,
+          cursor: 'ew-resize',
         },
       });
 
@@ -134,6 +175,7 @@ export default defineComponent({
           r: 6,
           fill: '#757575',
           lineWidth: 0,
+          cursor: 'ew-resize',
         },
       });
 
@@ -146,7 +188,34 @@ export default defineComponent({
           height: 12,
           fill: '#bdbdbd',
           lineWidth: 0,
+          cursor: 'move',
         },
+      });
+
+      leftPoint.on('mousedown', () => {
+        allowLeftMove = true;
+      });
+      rightPoint.on('mousedown', () => {
+        allowRightMove = true;
+      });
+      centerBar.on('mousedown', () => {
+        allowCenterMove = true;
+      });
+      painter.on('mouseup', () => {
+        allowLeftMove = false;
+        allowRightMove = false;
+        allowCenterMove = false;
+      });
+      painter.on('mousemove', (event) => {
+        if (allowLeftMove) {
+          console.log(event);
+        }
+        if (allowRightMove) {
+          console.log(event);
+        }
+        if (allowCenterMove) {
+          console.log(event);
+        }
       });
     });
   },
