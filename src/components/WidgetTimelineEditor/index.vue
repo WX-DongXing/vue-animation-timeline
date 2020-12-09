@@ -85,9 +85,13 @@ export default defineComponent({
     const { rect } = useResize();
     let painter = ref();
     let timeRect = ref();
+    let timelineRect = ref();
     let leftPoint = ref();
     let centerBar = ref();
     let rightPoint = ref();
+    let playBarTriangle = ref();
+    let playBarLine = ref();
+
     let leftPosition = ref(0);
     let rightPosition = ref(0);
     let record = reactive({
@@ -99,10 +103,13 @@ export default defineComponent({
     let allowLeftMove = false;
     let allowRightMove = false;
     let allowCenterMove = false;
+    let allowPalyBarMove = false;
 
     const calc = () => {
       const { width, height } = rect;
-      const { maxTime, startTime, endTime } = state;
+      const {
+        time, maxTime, startTime, endTime,
+      } = state;
       const unitWidth = width / maxTime;
       leftPosition = startTime * unitWidth + 10;
       rightPosition = endTime * unitWidth - 10;
@@ -112,6 +119,9 @@ export default defineComponent({
 
       // set time rect width
       timeRect.attr('width', width);
+
+      // set timeline rect width
+      timelineRect.attr('width', width);
 
       // set left point x position
       leftPoint.animate({
@@ -135,6 +145,27 @@ export default defineComponent({
       centerBar.animate({
         width: rightPosition - leftPosition,
         x: leftPosition,
+      }, {
+        delay: 0,
+        duration: 50,
+        easing: 'easeLinear',
+      });
+
+      // set play bar triangle x
+      playBarTriangle.animate({
+        x: (width / maxTime) * time + 10,
+      }, {
+        delay: 0,
+        duration: 50,
+        easing: 'easeLinear',
+      });
+
+      // set play bar line x
+      playBarLine.animate({
+        x1: (width / maxTime) * time + 10,
+        y1: 32,
+        x2: (width / maxTime) * time + 10,
+        y2: height,
       }, {
         delay: 0,
         duration: 50,
@@ -205,12 +236,51 @@ export default defineComponent({
         },
       });
 
+      timelineRect = painter.addShape('rect', {
+        name: 'timelineBar',
+        attrs: {
+          x: 0,
+          y: 20,
+          width,
+          height: 36,
+          fill: '#eeeeee',
+        },
+      });
+
+      playBarTriangle = painter.addShape('marker', {
+        name: 'playBarTriangle',
+        attrs: {
+          x: 10,
+          y: 32,
+          r: 8,
+          fill: '#1890FF',
+          lineWidth: 0,
+          cursor: 'move',
+          symbol: 'triangle-down',
+        },
+      });
+
+      playBarLine = painter.addShape('line', {
+        name: 'playBarLine',
+        attrs: {
+          x1: 10,
+          y1: 32,
+          x2: 10,
+          y2: height,
+          stroke: '#1890FF',
+          lineWidth: 1,
+          cursor: 'move',
+        },
+      });
+
       leftPoint.on('mousedown', () => {
         allowLeftMove = true;
       });
+
       rightPoint.on('mousedown', () => {
         allowRightMove = true;
       });
+
       centerBar.on('mousedown', ({ x }) => {
         allowCenterMove = true;
         record = {
@@ -219,24 +289,40 @@ export default defineComponent({
           endTime: state.endTime,
         };
       });
+
+      playBarTriangle.on('mousedown', () => {
+        allowPalyBarMove = true;
+      });
+
+      playBarLine.on('mousedown', () => {
+        allowPalyBarMove = true;
+      });
+
       painter.on('mouseup', () => {
         allowLeftMove = false;
         allowRightMove = false;
         allowCenterMove = false;
+        allowPalyBarMove = false;
       });
+
       painter.on('mousemove', ({ x }) => {
+        // left point moving
         if (allowLeftMove && x >= 10 && x <= rightPosition) {
           const rate = (x - 10) / rect.width;
           store.commit(Mutations.SET_STATE, {
             startTime: state.maxTime * rate,
           });
         }
+
+        // right point moving
         if (allowRightMove && x <= rect.width - 10 && x >= leftPosition) {
           const rate = (x + 10) / rect.width;
           store.commit(Mutations.SET_STATE, {
             endTime: state.maxTime * rate,
           });
         }
+
+        // center rect moving
         if (allowCenterMove && leftPosition >= 10 && rightPosition <= rect.width - 10) {
           const distanceDiff = x - record.center;
           const timeDiff = (distanceDiff / rect.width) * state.maxTime;
@@ -257,6 +343,14 @@ export default defineComponent({
           store.commit(Mutations.SET_STATE, {
             startTime: record.startTime + timeDiff,
             endTime: record.endTime + timeDiff,
+          });
+        }
+
+        // play bar moving
+        if (allowPalyBarMove && x >= 10 && x <= width - 10) {
+          const rate = state.maxTime / rect.width;
+          store.commit(Mutations.SET_STATE, {
+            time: rate * (x - 10),
           });
         }
         return false;
