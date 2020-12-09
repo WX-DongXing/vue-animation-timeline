@@ -153,7 +153,7 @@ export default defineComponent({
 
       // set play bar triangle x
       playBarTriangle.animate({
-        x: (width / maxTime) * time + 10,
+        x: ((width - 20) / maxTime) * time + 10,
       }, {
         delay: 0,
         duration: 50,
@@ -162,9 +162,9 @@ export default defineComponent({
 
       // set play bar line x
       playBarLine.animate({
-        x1: (width / maxTime) * time + 10,
+        x1: ((width - 20) / maxTime) * time + 10,
         y1: 32,
-        x2: (width / maxTime) * time + 10,
+        x2: ((width - 20) / maxTime) * time + 10,
         y2: height,
       }, {
         delay: 0,
@@ -348,7 +348,7 @@ export default defineComponent({
 
         // play bar moving
         if (allowPalyBarMove && x >= 10 && x <= width - 10) {
-          const rate = state.maxTime / rect.width;
+          const rate = state.maxTime / (rect.width - 20);
           store.commit(Mutations.SET_STATE, {
             time: rate * (x - 10),
           });
