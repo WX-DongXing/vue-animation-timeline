@@ -84,6 +84,7 @@ export default defineComponent({
     const startTime = ref(0);
     const endTime = ref(10000);
     const maxTime = ref(10000);
+    const scaleRate = ref(1);
     const { rect } = useResize();
     let painter = ref();
     let timeRect = ref();
@@ -115,13 +116,71 @@ export default defineComponent({
     let allowCenterMove = false;
     let allowPlayBarMove = false;
 
-    const scaleRate = computed(() => (endTime.value - startTime.value) / maxTime.value);
     const unitTickCount = computed(() => Math.floor(maxTime.value / 1000));
     const unitLength = computed(() => (rect.width - 20) / maxTime.value);
     const unitSecondLength = computed(() => unitLength.value * 1000);
     // const extraLength = computed(
     //   () => Math.round(rect.width - 20 - unitTickCount.value * unitSecondLength.value),
     // );
+
+    const resizeDecorate = () => {
+      const { width, height } = rect;
+      // change painter size
+      painter.changeSize(width, height);
+
+      // set time rect width
+      timeRect.attr('width', width);
+
+      // set timeline rect width
+      timelineRect.attr('width', width);
+
+      // set time line axis width
+      timelineAxis.animate({
+        x1: 10,
+        y1: 48,
+        x2: width - 10,
+        y2: 48,
+      }, animateOptions);
+    };
+
+    const resizeScaleBar = () => {
+      const { width, height } = rect;
+      const unitWidth = width / maxTime.value;
+      record.leftPosition = startTime.value * unitWidth + 10;
+      record.rightPosition = endTime.value * unitWidth - 10;
+
+      // set left point x position
+      leftPoint.animate({
+        x: record.leftPosition,
+      }, animateOptions);
+
+      // set right point x position
+      rightPoint.animate({
+        x: record.rightPosition,
+      }, animateOptions);
+
+      // set center bar width, x
+      centerBar.animate({
+        width: record.rightPosition - record.leftPosition,
+        x: record.leftPosition,
+      }, animateOptions);
+    };
+
+    const resizePlayBar = () => {
+      const { width, height } = rect;
+      // set play bar triangle x
+      playBarTriangle.animate({
+        x: ((width - 20) / maxTime.value) * time.value + 10,
+      }, animateOptions);
+
+      // set play bar line x
+      playBarLine.animate({
+        x1: ((width - 20) / maxTime.value) * time.value + 10,
+        y1: 30,
+        x2: ((width - 20) / maxTime.value) * time.value + 10,
+        y2: height,
+      }, animateOptions);
+    };
 
     const drawTick = () => {
       axisTicks.value.forEach((axis) => {
@@ -178,59 +237,6 @@ export default defineComponent({
       });
     };
 
-    const resize = () => {
-      const { width, height } = rect;
-      const unitWidth = width / maxTime.value;
-      record.leftPosition = startTime.value * unitWidth + 10;
-      record.rightPosition = endTime.value * unitWidth - 10;
-
-      // change painter size
-      painter.changeSize(width, height);
-
-      // set time rect width
-      timeRect.attr('width', width);
-
-      // set timeline rect width
-      timelineRect.attr('width', width);
-
-      // set left point x position
-      leftPoint.animate({
-        x: record.leftPosition,
-      }, animateOptions);
-
-      // set right point x position
-      rightPoint.animate({
-        x: record.rightPosition,
-      }, animateOptions);
-
-      // set center bar width, x
-      centerBar.animate({
-        width: record.rightPosition - record.leftPosition,
-        x: record.leftPosition,
-      }, animateOptions);
-
-      // set play bar triangle x
-      playBarTriangle.animate({
-        x: ((width - 20) / maxTime.value) * time.value + 10,
-      }, animateOptions);
-
-      // set play bar line x
-      playBarLine.animate({
-        x1: ((width - 20) / maxTime.value) * time.value + 10,
-        y1: 30,
-        x2: ((width - 20) / maxTime.value) * time.value + 10,
-        y2: height,
-      }, animateOptions);
-
-      // set time line axis width
-      timelineAxis.animate({
-        x1: 10,
-        y1: 48,
-        x2: width - 10,
-        y2: 48,
-      }, animateOptions);
-    };
-
     const stopMoving = () => {
       allowLeftMove = false;
       allowRightMove = false;
@@ -239,24 +245,32 @@ export default defineComponent({
     };
 
     watch(rect, () => {
-      resize();
+      resizeDecorate();
+      resizeScaleBar();
+      resizePlayBar();
       drawTick();
     });
 
-    watch(
-      [startTime, endTime, time],
-      ([newStartTime, newEndTime], [oldStartTime, oldEndTime]) => {
-        resize();
-        drawTick();
-        if (newStartTime !== oldStartTime) {
-          console.log('drag start', oldStartTime - newStartTime);
-        }
-
-        if (newEndTime !== oldEndTime) {
-          console.log('drag end');
-        }
-      },
-    );
+    watch(startTime, (newVal, oldVal) => {
+      console.log(newVal - oldVal);
+      resizeScaleBar();
+      resizePlayBar();
+      drawTick();
+    });
+    watch(endTime, () => {
+      resizeScaleBar();
+      resizePlayBar();
+      drawTick();
+    });
+    watch(time, () => {
+      resizePlayBar();
+    });
+    watch(maxTime, () => {
+      resizeDecorate();
+      resizeScaleBar();
+      resizePlayBar();
+      drawTick();
+    });
 
     onMounted(() => {
       const { width, height } = document.getElementById('painter').getBoundingClientRect();
