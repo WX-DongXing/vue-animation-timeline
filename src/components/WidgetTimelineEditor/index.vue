@@ -56,9 +56,6 @@ export default defineComponent({
     timeScale() {
       return dayjs(this.time).format('mm:ss:SSS');
     },
-    scaleRate() {
-      return (this.endTime - this.startTime) / this.maxTime;
-    },
     maxTimeScale: {
       get() {
         return dayjs(this.maxTime).format('mm:ss:SSS');
@@ -84,7 +81,6 @@ export default defineComponent({
     const startTime = ref(0);
     const endTime = ref(10000);
     const maxTime = ref(10000);
-    const scaleRate = ref(1);
     const { rect } = useResize();
     let painter = ref();
     let timeRect = ref();
@@ -100,7 +96,9 @@ export default defineComponent({
     const record = reactive({
       leftPosition: 0,
       startTime: 0,
-      center: 0,
+      leftAnchor: 0,
+      centerAnchor: 0,
+      rightAnchor: 0,
       endTime: 0,
       rightPosition: 0,
     });
@@ -116,12 +114,13 @@ export default defineComponent({
     let allowCenterMove = false;
     let allowPlayBarMove = false;
 
-    const unitTickCount = computed(() => Math.floor(maxTime.value / 1000));
+    const unitTickCount = computed(() => Math.trunc(maxTime.value / 1000));
     const unitLength = computed(() => (rect.width - 20) / maxTime.value);
     const unitSecondLength = computed(() => unitLength.value * 1000);
     // const extraLength = computed(
     //   () => Math.round(rect.width - 20 - unitTickCount.value * unitSecondLength.value),
     // );
+    const scaleRate = computed(() => (endTime.value - startTime.value) / maxTime.value);
 
     const resizeDecorate = () => {
       const { width, height } = rect;
@@ -144,7 +143,7 @@ export default defineComponent({
     };
 
     const resizeScaleBar = () => {
-      const { width, height } = rect;
+      const { width } = rect;
       const unitWidth = width / maxTime.value;
       record.leftPosition = startTime.value * unitWidth + 10;
       record.rightPosition = endTime.value * unitWidth - 10;
@@ -182,7 +181,8 @@ export default defineComponent({
       }, animateOptions);
     };
 
-    const drawTick = () => {
+    const drawTick = (distance = 0) => {
+      console.log(distance);
       axisTicks.value.forEach((axis) => {
         axis.remove(true);
       });
@@ -192,9 +192,9 @@ export default defineComponent({
         const axisTick = painter.addShape('line', {
           name: 'axisTick',
           attrs: {
-            x1: (10 + index * unitSecondLength.value) / scaleRate.value,
+            x1: 10 + (index * unitSecondLength.value) / scaleRate.value,
             y1: 40,
-            x2: (10 + index * unitSecondLength.value) / scaleRate.value,
+            x2: 10 + (index * unitSecondLength.value) / scaleRate.value,
             y2: 48,
             stroke: '#212121',
             lineWidth: 1,
@@ -203,16 +203,16 @@ export default defineComponent({
         });
 
         let smallAxisTick = [];
-        if (unitSecondLength.value / scaleRate >= TICK_MAX_LENGTH) {
+        if (unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH) {
           smallAxisTick = new Array(6).fill(null).map((__, i) => painter.addShape('line', {
             name: 'axisTick',
             attrs: {
-              x1: (
-                10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5)
+              x1: 10 + (
+                index * unitSecondLength.value + i * (unitSecondLength.value / 5)
               ) / scaleRate.value,
               y1: 42,
-              x2: (
-                10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5)
+              x2: 10 + (
+                index * unitSecondLength.value + i * (unitSecondLength.value / 5)
               ) / scaleRate.value,
               y2: 48,
               stroke: '#212121',
@@ -224,7 +224,9 @@ export default defineComponent({
 
         const axisText = painter.addShape('text', {
           attrs: {
-            x: ((index >= 10 ? 0 : 5) + index * unitSecondLength.value) / scaleRate.value,
+            x: (index >= 10 ? 0 : 5) + (
+              index * unitSecondLength.value
+            ) / scaleRate.value,
             y: 40,
             fontFamily: 'PingFang SC',
             text: `${index}s`,
@@ -251,11 +253,13 @@ export default defineComponent({
       drawTick();
     });
 
-    watch(startTime, (newVal, oldVal) => {
-      console.log(newVal - oldVal);
+    watch(startTime, () => {
+      // console.log(record.leftAnchor, record.leftPosition);
+      // const direction = (newVal - oldVal) / Math.abs(newVal - oldVal);
+      const distance = record.leftPosition - record.leftAnchor;
       resizeScaleBar();
       resizePlayBar();
-      drawTick();
+      drawTick(distance);
     });
     watch(endTime, () => {
       resizeScaleBar();
@@ -381,18 +385,20 @@ export default defineComponent({
 
       playBarLine.toFront();
 
-      leftPoint.on('mousedown', () => {
+      leftPoint.on('mousedown', ({ x }) => {
         allowLeftMove = true;
+        record.leftAnchor = x;
       });
 
-      rightPoint.on('mousedown', () => {
+      rightPoint.on('mousedown', ({ x }) => {
         allowRightMove = true;
+        record.rightAnchor = x;
       });
 
       centerBar.on('mousedown', ({ x }) => {
         allowCenterMove = true;
         record.startTime = startTime.value;
-        record.center = x;
+        record.centerAnchor = x;
         record.endTime = endTime.value;
       });
 
@@ -459,6 +465,7 @@ export default defineComponent({
       startTime,
       endTime,
       maxTime,
+      scaleRate,
     };
   },
 });
