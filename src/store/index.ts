@@ -10,9 +10,9 @@ export const Mutations: Record<string, any> = {
 
 export default new Vuex.Store({
   state: {
-    time: 1000,
-    startTime: 1000,
-    endTime: 9000,
+    time: 0,
+    startTime: 0,
+    endTime: 10000,
     maxTime: 10000,
   },
   mutations: {

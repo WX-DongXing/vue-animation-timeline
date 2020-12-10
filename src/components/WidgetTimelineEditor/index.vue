@@ -10,8 +10,8 @@
 
       <div class="widget-timeline-editor__title">
         <span>{{ timeScale }}</span>
-        <span>startTime: {{ startTime }}</span>
-        <span>endTime: {{ endTime }}</span>
+        <span>startTime: {{ startTime * scaleRate }}</span>
+        <span>endTime: {{ endTime * scaleRate }}</span>
         <input type="text" v-model.trim="maxTimeScale">
       </div>
       <!-- / timescale area -->
@@ -43,21 +43,21 @@ import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
   defineComponent, onMounted, watch, ref,
-  inject, reactive, computed,
+  reactive, computed, onUnmounted,
 } from 'vue-demi';
 import SvgIcon from '@/components/SvgIcon.vue';
-import Mixins from '@/utils/mixins.vue';
 import useResize from '@/utils/useResize.ts';
-import { Mutations } from '@/store';
 
 export default defineComponent({
-  mixins: [Mixins],
   components: {
     SvgIcon,
   },
   computed: {
     timeScale() {
       return dayjs(this.time).format('mm:ss:SSS');
+    },
+    scaleRate() {
+      return (this.endTime - this.startTime) / this.maxTime;
     },
     maxTimeScale: {
       get() {
@@ -68,24 +68,23 @@ export default defineComponent({
         if (pattern.test(time)) {
           const [, mm, ss, SSS] = time.match(pattern);
           const maxTime = +mm * 60 * 1000 + +ss * 1000 + +SSS;
-          this.setMaxTime({ maxTime });
-          if (maxTime <= this.endTime) {
-            if (this.startTime >= maxTime) {
-              this.setState({ startTime: 0 });
+          this.maxTime = maxTime;
+          if (+maxTime <= this.endTime) {
+            if (this.startTime >= +maxTime) {
+              this.startTime = 0;
             }
-            this.setState({ endTime: maxTime || 1000 });
+            this.endTime = +maxTime || 1000;
           }
-        } else {
-          this.setMaxTime({ maxTime: this.maxTime });
         }
       },
     },
   },
   setup() {
-    const store = inject('store');
-    const state = reactive(store.state);
+    const time = ref(0);
+    const startTime = ref(0);
+    const endTime = ref(10000);
+    const maxTime = ref(10000);
     const { rect } = useResize();
-    const TICK_MAX_LENGTH = 150;
     let painter = ref();
     let timeRect = ref();
     let timelineRect = ref();
@@ -97,87 +96,34 @@ export default defineComponent({
     let timelineAxis = ref();
     const axisTicks = ref([]);
 
-    let leftPosition = ref(0);
-    let rightPosition = ref(0);
-    let record = reactive({
+    const record = reactive({
+      leftPosition: 0,
       startTime: 0,
       center: 0,
       endTime: 0,
+      rightPosition: 0,
     });
 
-    let allowLeftMove = false;
-    let allowRightMove = false;
-    let allowCenterMove = false;
-    let allowPlayBarMove = false;
-
+    const TICK_MAX_LENGTH = 150;
     const animateOptions = {
       delay: 0,
       duration: 50,
       easing: 'easeLinear',
     };
+    let allowLeftMove = false;
+    let allowRightMove = false;
+    let allowCenterMove = false;
+    let allowPlayBarMove = false;
 
-    const unitTickCount = computed(() => Math.floor(state.maxTime / 1000));
-    const unitLength = computed(() => (rect.width - 20) / state.maxTime);
+    const scaleRate = computed(() => (endTime.value - startTime.value) / maxTime.value);
+    const unitTickCount = computed(() => Math.floor(maxTime.value / 1000));
+    const unitLength = computed(() => (rect.width - 20) / maxTime.value);
     const unitSecondLength = computed(() => unitLength.value * 1000);
-    const extraLength = computed(
-      () => Math.round(rect.width - 20 - unitTickCount.value * unitSecondLength.value),
-    );
+    // const extraLength = computed(
+    //   () => Math.round(rect.width - 20 - unitTickCount.value * unitSecondLength.value),
+    // );
 
-    const calc = () => {
-      const { width, height } = rect;
-      const {
-        time, maxTime, startTime, endTime,
-      } = state;
-      const unitWidth = width / maxTime;
-      leftPosition = startTime * unitWidth + 10;
-      rightPosition = endTime * unitWidth - 10;
-
-      // change painter size
-      painter.changeSize(width, height);
-
-      // set time rect width
-      timeRect.attr('width', width);
-
-      // set timeline rect width
-      timelineRect.attr('width', width);
-
-      // set left point x position
-      leftPoint.animate({
-        x: leftPosition,
-      }, animateOptions);
-
-      // set right point x position
-      rightPoint.animate({
-        x: rightPosition,
-      }, animateOptions);
-
-      // set center bar width, x
-      centerBar.animate({
-        width: rightPosition - leftPosition,
-        x: leftPosition,
-      }, animateOptions);
-
-      // set play bar triangle x
-      playBarTriangle.animate({
-        x: ((width - 20) / maxTime) * time + 10,
-      }, animateOptions);
-
-      // set play bar line x
-      playBarLine.animate({
-        x1: ((width - 20) / maxTime) * time + 10,
-        y1: 30,
-        x2: ((width - 20) / maxTime) * time + 10,
-        y2: height,
-      }, animateOptions);
-
-      // set time line axis width
-      timelineAxis.animate({
-        x1: 10,
-        y1: 48,
-        x2: width - 10,
-        y2: 48,
-      }, animateOptions);
-
+    const drawTick = () => {
       axisTicks.value.forEach((axis) => {
         axis.remove(true);
       });
@@ -187,9 +133,9 @@ export default defineComponent({
         const axisTick = painter.addShape('line', {
           name: 'axisTick',
           attrs: {
-            x1: 10 + index * unitSecondLength.value,
+            x1: (10 + index * unitSecondLength.value) / scaleRate.value,
             y1: 40,
-            x2: 10 + index * unitSecondLength.value,
+            x2: (10 + index * unitSecondLength.value) / scaleRate.value,
             y2: 48,
             stroke: '#212121',
             lineWidth: 1,
@@ -198,13 +144,17 @@ export default defineComponent({
         });
 
         let smallAxisTick = [];
-        if (unitSecondLength.value >= TICK_MAX_LENGTH) {
+        if (unitSecondLength.value / scaleRate >= TICK_MAX_LENGTH) {
           smallAxisTick = new Array(6).fill(null).map((__, i) => painter.addShape('line', {
             name: 'axisTick',
             attrs: {
-              x1: 10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5),
+              x1: (
+                10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5)
+              ) / scaleRate.value,
               y1: 42,
-              x2: 10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5),
+              x2: (
+                10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5)
+              ) / scaleRate.value,
               y2: 48,
               stroke: '#212121',
               lineWidth: 1,
@@ -215,7 +165,7 @@ export default defineComponent({
 
         const axisText = painter.addShape('text', {
           attrs: {
-            x: (index >= 10 ? 0 : 5) + index * unitSecondLength.value,
+            x: ((index >= 10 ? 0 : 5) + index * unitSecondLength.value) / scaleRate.value,
             y: 40,
             fontFamily: 'PingFang SC',
             text: `${index}s`,
@@ -228,13 +178,85 @@ export default defineComponent({
       });
     };
 
+    const resize = () => {
+      const { width, height } = rect;
+      const unitWidth = width / maxTime.value;
+      record.leftPosition = startTime.value * unitWidth + 10;
+      record.rightPosition = endTime.value * unitWidth - 10;
+
+      // change painter size
+      painter.changeSize(width, height);
+
+      // set time rect width
+      timeRect.attr('width', width);
+
+      // set timeline rect width
+      timelineRect.attr('width', width);
+
+      // set left point x position
+      leftPoint.animate({
+        x: record.leftPosition,
+      }, animateOptions);
+
+      // set right point x position
+      rightPoint.animate({
+        x: record.rightPosition,
+      }, animateOptions);
+
+      // set center bar width, x
+      centerBar.animate({
+        width: record.rightPosition - record.leftPosition,
+        x: record.leftPosition,
+      }, animateOptions);
+
+      // set play bar triangle x
+      playBarTriangle.animate({
+        x: ((width - 20) / maxTime.value) * time.value + 10,
+      }, animateOptions);
+
+      // set play bar line x
+      playBarLine.animate({
+        x1: ((width - 20) / maxTime.value) * time.value + 10,
+        y1: 30,
+        x2: ((width - 20) / maxTime.value) * time.value + 10,
+        y2: height,
+      }, animateOptions);
+
+      // set time line axis width
+      timelineAxis.animate({
+        x1: 10,
+        y1: 48,
+        x2: width - 10,
+        y2: 48,
+      }, animateOptions);
+    };
+
+    const stopMoving = () => {
+      allowLeftMove = false;
+      allowRightMove = false;
+      allowCenterMove = false;
+      allowPlayBarMove = false;
+    };
+
     watch(rect, () => {
-      calc();
+      resize();
+      drawTick();
     });
 
-    watch(state, () => {
-      calc();
-    });
+    watch(
+      [startTime, endTime, time],
+      ([newStartTime, newEndTime], [oldStartTime, oldEndTime]) => {
+        resize();
+        drawTick();
+        if (newStartTime !== oldStartTime) {
+          console.log('drag start', oldStartTime - newStartTime);
+        }
+
+        if (newEndTime !== oldEndTime) {
+          console.log('drag end');
+        }
+      },
+    );
 
     onMounted(() => {
       const { width, height } = document.getElementById('painter').getBoundingClientRect();
@@ -315,8 +337,6 @@ export default defineComponent({
         },
       });
 
-      playBarTriangle.toFront();
-
       playBarLine = painter.addShape('line', {
         name: 'playBarLine',
         attrs: {
@@ -329,8 +349,6 @@ export default defineComponent({
           cursor: 'move',
         },
       });
-
-      playBarLine.toFront();
 
       timelineAxis = painter.addShape('line', {
         name: 'playBarLine',
@@ -345,49 +363,9 @@ export default defineComponent({
         },
       });
 
-      new Array(unitTickCount.value).fill(null).forEach((_, index) => {
-        const axisTick = painter.addShape('line', {
-          name: 'axisTick',
-          attrs: {
-            x1: 10 + index * unitSecondLength.value,
-            y1: 40,
-            x2: 10 + index * unitSecondLength.value,
-            y2: 48,
-            stroke: '#212121',
-            lineWidth: 1,
-            cursor: 'move',
-          },
-        });
+      playBarTriangle.toFront();
 
-        let smallAxisTick = [];
-        if (unitSecondLength.value >= TICK_MAX_LENGTH) {
-          smallAxisTick = new Array(6).fill(null).map((__, i) => painter.addShape('line', {
-            name: 'axisTick',
-            attrs: {
-              x1: 10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5),
-              y1: 42,
-              x2: 10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5),
-              y2: 48,
-              stroke: '#212121',
-              lineWidth: 1,
-              cursor: 'move',
-            },
-          }));
-        }
-
-        const axisText = painter.addShape('text', {
-          attrs: {
-            x: (index >= 10 ? 0 : 5) + index * unitSecondLength.value,
-            y: 40,
-            fontFamily: 'PingFang SC',
-            text: `${index}s`,
-            fontSize: 12,
-            fill: '#212121',
-          },
-        });
-
-        axisTicks.value.push(...[axisTick, axisText, ...smallAxisTick]);
-      });
+      playBarLine.toFront();
 
       leftPoint.on('mousedown', () => {
         allowLeftMove = true;
@@ -399,11 +377,9 @@ export default defineComponent({
 
       centerBar.on('mousedown', ({ x }) => {
         allowCenterMove = true;
-        record = {
-          startTime: state.startTime,
-          center: x,
-          endTime: state.endTime,
-        };
+        record.startTime = startTime.value;
+        record.center = x;
+        record.endTime = endTime.value;
       });
 
       playBarTriangle.on('mousedown', () => {
@@ -414,64 +390,62 @@ export default defineComponent({
         allowPlayBarMove = true;
       });
 
-      painter.on('mouseup', () => {
-        allowLeftMove = false;
-        allowRightMove = false;
-        allowCenterMove = false;
-        allowPlayBarMove = false;
-      });
+      document.addEventListener('mouseup', stopMoving);
 
       painter.on('mousemove', ({ x }) => {
         // left point moving
-        if (allowLeftMove && x >= 10 && x <= rightPosition) {
+        if (allowLeftMove && x >= 10 && x <= record.rightPosition) {
           const rate = (x - 10) / rect.width;
-          store.commit(Mutations.SET_STATE, {
-            startTime: state.maxTime * rate,
-          });
+          startTime.value = maxTime.value * rate;
         }
 
         // right point moving
-        if (allowRightMove && x <= rect.width - 10 && x >= leftPosition) {
+        if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition) {
           const rate = (x + 10) / rect.width;
-          store.commit(Mutations.SET_STATE, {
-            endTime: state.maxTime * rate,
-          });
+          endTime.value = maxTime.value * rate;
         }
 
         // center rect moving
-        if (allowCenterMove && leftPosition >= 10 && rightPosition <= rect.width - 10) {
+        if (
+          allowCenterMove
+          && record.leftPosition >= 10
+          && record.rightPosition <= rect.width - 10
+        ) {
           const distanceDiff = x - record.center;
-          const timeDiff = (distanceDiff / rect.width) * state.maxTime;
+          const timeDiff = (distanceDiff / rect.width) * maxTime.value;
           if (record.startTime + timeDiff <= 0) {
-            store.commit(Mutations.SET_STATE, {
-              startTime: 0,
-              endTime: record.endTime - record.startTime,
-            });
+            startTime.value = 0;
+            endTime.value = record.endTime - record.startTime;
             return false;
           }
-          if (record.endTime + timeDiff >= state.maxTime) {
-            store.commit(Mutations.SET_STATE, {
-              startTime: state.maxTime - (record.endTime - record.startTime),
-              endTime: state.maxTime,
-            });
+          if (record.endTime + timeDiff >= maxTime.value) {
+            startTime.value = maxTime.value - (record.endTime - record.startTime);
+            endTime.value = maxTime.value;
             return false;
           }
-          store.commit(Mutations.SET_STATE, {
-            startTime: record.startTime + timeDiff,
-            endTime: record.endTime + timeDiff,
-          });
+          startTime.value = record.startTime + timeDiff;
+          endTime.value = record.endTime + timeDiff;
         }
 
         // play bar moving
         if (allowPlayBarMove && x >= 10 && x <= width - 10) {
-          const rate = state.maxTime / (Math.round(rect.width) - 20);
-          store.commit(Mutations.SET_STATE, {
-            time: rate * (x - 10),
-          });
+          const rate = maxTime.value / (Math.round(rect.width) - 20);
+          time.value = rate * (x - 10);
         }
         return false;
       });
     });
+
+    onUnmounted(() => {
+      document.removeEventListener('mouseup', stopMoving);
+    });
+
+    return {
+      time,
+      startTime,
+      endTime,
+      maxTime,
+    };
   },
 });
 </script>
