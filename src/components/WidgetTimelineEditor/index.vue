@@ -43,7 +43,7 @@ import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
   defineComponent, onMounted, watch, ref,
-  inject, reactive,
+  inject, reactive, computed,
 } from 'vue-demi';
 import SvgIcon from '@/components/SvgIcon.vue';
 import Mixins from '@/utils/mixins.vue';
@@ -68,10 +68,12 @@ export default defineComponent({
         if (pattern.test(time)) {
           const [, mm, ss, SSS] = time.match(pattern);
           const maxTime = +mm * 60 * 1000 + +ss * 1000 + +SSS;
-          if (maxTime >= this.endTime) {
-            this.setMaxTime({ maxTime });
-          } else {
-            this.setMaxTime({ maxTime: this.endTime });
+          this.setMaxTime({ maxTime });
+          if (maxTime <= this.endTime) {
+            if (this.startTime >= maxTime) {
+              this.setState({ startTime: 0 });
+            }
+            this.setState({ endTime: maxTime || 1000 });
           }
         } else {
           this.setMaxTime({ maxTime: this.maxTime });
@@ -83,6 +85,7 @@ export default defineComponent({
     const store = inject('store');
     const state = reactive(store.state);
     const { rect } = useResize();
+    const TICK_MAX_LENGTH = 150;
     let painter = ref();
     let timeRect = ref();
     let timelineRect = ref();
@@ -91,6 +94,8 @@ export default defineComponent({
     let rightPoint = ref();
     let playBarTriangle = ref();
     let playBarLine = ref();
+    let timelineAxis = ref();
+    const axisTicks = ref([]);
 
     let leftPosition = ref(0);
     let rightPosition = ref(0);
@@ -103,7 +108,20 @@ export default defineComponent({
     let allowLeftMove = false;
     let allowRightMove = false;
     let allowCenterMove = false;
-    let allowPalyBarMove = false;
+    let allowPlayBarMove = false;
+
+    const animateOptions = {
+      delay: 0,
+      duration: 50,
+      easing: 'easeLinear',
+    };
+
+    const unitTickCount = computed(() => Math.floor(state.maxTime / 1000));
+    const unitLength = computed(() => (rect.width - 20) / state.maxTime);
+    const unitSecondLength = computed(() => unitLength.value * 1000);
+    const extraLength = computed(
+      () => Math.round(rect.width - 20 - unitTickCount.value * unitSecondLength.value),
+    );
 
     const calc = () => {
       const { width, height } = rect;
@@ -126,50 +144,87 @@ export default defineComponent({
       // set left point x position
       leftPoint.animate({
         x: leftPosition,
-      }, {
-        delay: 0,
-        duration: 50,
-        easing: 'easeLinear',
-      });
+      }, animateOptions);
 
       // set right point x position
       rightPoint.animate({
         x: rightPosition,
-      }, {
-        delay: 0,
-        duration: 50,
-        easing: 'easeLinear',
-      });
+      }, animateOptions);
 
       // set center bar width, x
       centerBar.animate({
         width: rightPosition - leftPosition,
         x: leftPosition,
-      }, {
-        delay: 0,
-        duration: 50,
-        easing: 'easeLinear',
-      });
+      }, animateOptions);
 
       // set play bar triangle x
       playBarTriangle.animate({
         x: ((width - 20) / maxTime) * time + 10,
-      }, {
-        delay: 0,
-        duration: 50,
-        easing: 'easeLinear',
-      });
+      }, animateOptions);
 
       // set play bar line x
       playBarLine.animate({
         x1: ((width - 20) / maxTime) * time + 10,
-        y1: 32,
+        y1: 30,
         x2: ((width - 20) / maxTime) * time + 10,
         y2: height,
-      }, {
-        delay: 0,
-        duration: 50,
-        easing: 'easeLinear',
+      }, animateOptions);
+
+      // set time line axis width
+      timelineAxis.animate({
+        x1: 10,
+        y1: 48,
+        x2: width - 10,
+        y2: 48,
+      }, animateOptions);
+
+      axisTicks.value.forEach((axis) => {
+        axis.remove(true);
+      });
+      axisTicks.value = [];
+
+      new Array(unitTickCount.value + 1).fill(null).forEach((_, index) => {
+        const axisTick = painter.addShape('line', {
+          name: 'axisTick',
+          attrs: {
+            x1: 10 + index * unitSecondLength.value,
+            y1: 40,
+            x2: 10 + index * unitSecondLength.value,
+            y2: 48,
+            stroke: '#212121',
+            lineWidth: 1,
+            cursor: 'move',
+          },
+        });
+
+        let smallAxisTick = [];
+        if (unitSecondLength.value >= TICK_MAX_LENGTH) {
+          smallAxisTick = new Array(6).fill(null).map((__, i) => painter.addShape('line', {
+            name: 'axisTick',
+            attrs: {
+              x1: 10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5),
+              y1: 42,
+              x2: 10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5),
+              y2: 48,
+              stroke: '#212121',
+              lineWidth: 1,
+              cursor: 'move',
+            },
+          }));
+        }
+
+        const axisText = painter.addShape('text', {
+          attrs: {
+            x: (index >= 10 ? 0 : 5) + index * unitSecondLength.value,
+            y: 40,
+            fontFamily: 'PingFang SC',
+            text: `${index}s`,
+            fontSize: 12,
+            fill: '#212121',
+          },
+        });
+
+        axisTicks.value.push(...[axisTick, axisText, ...smallAxisTick]);
       });
     };
 
@@ -251,7 +306,7 @@ export default defineComponent({
         name: 'playBarTriangle',
         attrs: {
           x: 10,
-          y: 32,
+          y: 30,
           r: 8,
           fill: '#1890FF',
           lineWidth: 0,
@@ -260,17 +315,78 @@ export default defineComponent({
         },
       });
 
+      playBarTriangle.toFront();
+
       playBarLine = painter.addShape('line', {
         name: 'playBarLine',
         attrs: {
           x1: 10,
-          y1: 32,
+          y1: 30,
           x2: 10,
           y2: height,
           stroke: '#1890FF',
           lineWidth: 1,
           cursor: 'move',
         },
+      });
+
+      playBarLine.toFront();
+
+      timelineAxis = painter.addShape('line', {
+        name: 'playBarLine',
+        attrs: {
+          x1: 10,
+          y1: 48,
+          x2: width - 10,
+          y2: 48,
+          stroke: '#212121',
+          lineWidth: 1,
+          cursor: 'move',
+        },
+      });
+
+      new Array(unitTickCount.value).fill(null).forEach((_, index) => {
+        const axisTick = painter.addShape('line', {
+          name: 'axisTick',
+          attrs: {
+            x1: 10 + index * unitSecondLength.value,
+            y1: 40,
+            x2: 10 + index * unitSecondLength.value,
+            y2: 48,
+            stroke: '#212121',
+            lineWidth: 1,
+            cursor: 'move',
+          },
+        });
+
+        let smallAxisTick = [];
+        if (unitSecondLength.value >= TICK_MAX_LENGTH) {
+          smallAxisTick = new Array(6).fill(null).map((__, i) => painter.addShape('line', {
+            name: 'axisTick',
+            attrs: {
+              x1: 10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5),
+              y1: 42,
+              x2: 10 + index * unitSecondLength.value + i * (unitSecondLength.value / 5),
+              y2: 48,
+              stroke: '#212121',
+              lineWidth: 1,
+              cursor: 'move',
+            },
+          }));
+        }
+
+        const axisText = painter.addShape('text', {
+          attrs: {
+            x: (index >= 10 ? 0 : 5) + index * unitSecondLength.value,
+            y: 40,
+            fontFamily: 'PingFang SC',
+            text: `${index}s`,
+            fontSize: 12,
+            fill: '#212121',
+          },
+        });
+
+        axisTicks.value.push(...[axisTick, axisText, ...smallAxisTick]);
       });
 
       leftPoint.on('mousedown', () => {
@@ -291,18 +407,18 @@ export default defineComponent({
       });
 
       playBarTriangle.on('mousedown', () => {
-        allowPalyBarMove = true;
+        allowPlayBarMove = true;
       });
 
       playBarLine.on('mousedown', () => {
-        allowPalyBarMove = true;
+        allowPlayBarMove = true;
       });
 
       painter.on('mouseup', () => {
         allowLeftMove = false;
         allowRightMove = false;
         allowCenterMove = false;
-        allowPalyBarMove = false;
+        allowPlayBarMove = false;
       });
 
       painter.on('mousemove', ({ x }) => {
@@ -347,8 +463,8 @@ export default defineComponent({
         }
 
         // play bar moving
-        if (allowPalyBarMove && x >= 10 && x <= width - 10) {
-          const rate = state.maxTime / (rect.width - 20);
+        if (allowPlayBarMove && x >= 10 && x <= width - 10) {
+          const rate = state.maxTime / (Math.round(rect.width) - 20);
           store.commit(Mutations.SET_STATE, {
             time: rate * (x - 10),
           });

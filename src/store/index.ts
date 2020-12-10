@@ -12,7 +12,7 @@ export default new Vuex.Store({
   state: {
     time: 1000,
     startTime: 1000,
-    endTime: 5000,
+    endTime: 9000,
     maxTime: 10000,
   },
   mutations: {
