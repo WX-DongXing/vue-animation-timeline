@@ -10,8 +10,10 @@
 
       <div class="widget-timeline-editor__title">
         <span>{{ timeScale }}</span>
-        <span>startTime: {{ startTime * scaleRate }}</span>
-        <span>endTime: {{ endTime * scaleRate }}</span>
+        <span>startTime: {{ calcStartTime }}</span>
+        <span>endTime: {{ calcEndTime }}</span>
+<!--        <span>maxTime: {{ calcMaxTime }}</span>-->
+        <span>scaleRate: {{ scaleRate }}</span>
         <input type="text" v-model.trim="maxTimeScale">
       </div>
       <!-- / timescale area -->
@@ -45,6 +47,7 @@ import {
   defineComponent, onMounted, watch, ref,
   reactive, computed, onUnmounted,
 } from 'vue-demi';
+import { throttledWatch } from '@vueuse/core';
 import SvgIcon from '@/components/SvgIcon.vue';
 import useResize from '@/utils/useResize.ts';
 
@@ -79,7 +82,9 @@ export default defineComponent({
   setup() {
     const time = ref(0);
     const startTime = ref(0);
+    const calcStartTime = ref(0);
     const endTime = ref(10000);
+    const calcEndTime = ref(10000);
     const maxTime = ref(10000);
     const { rect } = useResize();
     let painter = ref();
@@ -101,6 +106,8 @@ export default defineComponent({
       rightAnchor: 0,
       endTime: 0,
       rightPosition: 0,
+      calcStartTime: 0,
+      calcEndTime: 0,
     });
 
     const TICK_MAX_LENGTH = 150;
@@ -120,6 +127,9 @@ export default defineComponent({
     // const extraLength = computed(
     //   () => Math.round(rect.width - 20 - unitTickCount.value * unitSecondLength.value),
     // );
+    const calcMaxTime = computed(
+      () => maxTime.value / ((endTime.value - startTime.value) / maxTime.value),
+    );
     const scaleRate = computed(() => (endTime.value - startTime.value) / maxTime.value);
 
     const resizeDecorate = () => {
@@ -181,8 +191,7 @@ export default defineComponent({
       }, animateOptions);
     };
 
-    const drawTick = (distance = 0) => {
-      console.log(distance);
+    const drawTick = (buffer = 0) => {
       axisTicks.value.forEach((axis) => {
         axis.remove(true);
       });
@@ -192,9 +201,11 @@ export default defineComponent({
         const axisTick = painter.addShape('line', {
           name: 'axisTick',
           attrs: {
-            x1: 10 + (index * unitSecondLength.value) / scaleRate.value,
+            // eslint-disable-next-line max-len
+            x1: 10 + (index * unitSecondLength.value) / scaleRate.value - buffer,
             y1: 40,
-            x2: 10 + (index * unitSecondLength.value) / scaleRate.value,
+            // eslint-disable-next-line max-len
+            x2: 10 + (index * unitSecondLength.value) / scaleRate.value - buffer,
             y2: 48,
             stroke: '#212121',
             lineWidth: 1,
@@ -202,8 +213,21 @@ export default defineComponent({
           },
         });
 
+        const axisText = painter.addShape('text', {
+          attrs: {
+            x: (index >= 10 ? 0 : 5) + (
+              index * unitSecondLength.value
+            ) / scaleRate.value - buffer,
+            y: 40,
+            fontFamily: 'PingFang SC',
+            text: `${index}s`,
+            fontSize: 12,
+            fill: '#212121',
+          },
+        });
+
         let smallAxisTick = [];
-        if (unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH) {
+        if (unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH && false) {
           smallAxisTick = new Array(6).fill(null).map((__, i) => painter.addShape('line', {
             name: 'axisTick',
             attrs: {
@@ -221,19 +245,6 @@ export default defineComponent({
             },
           }));
         }
-
-        const axisText = painter.addShape('text', {
-          attrs: {
-            x: (index >= 10 ? 0 : 5) + (
-              index * unitSecondLength.value
-            ) / scaleRate.value,
-            y: 40,
-            fontFamily: 'PingFang SC',
-            text: `${index}s`,
-            fontSize: 12,
-            fill: '#212121',
-          },
-        });
 
         axisTicks.value.push(...[axisTick, axisText, ...smallAxisTick]);
       });
@@ -254,21 +265,33 @@ export default defineComponent({
     });
 
     watch(startTime, () => {
-      // console.log(record.leftAnchor, record.leftPosition);
-      // const direction = (newVal - oldVal) / Math.abs(newVal - oldVal);
-      const distance = record.leftPosition - record.leftAnchor;
+      // eslint-disable-next-line max-len
+      const buffer = 10 * unitSecondLength.value * ((1 - scaleRate.value) / scaleRate.value);
+      const timeBuffer = (buffer / (unitSecondLength.value / scaleRate.value)) * 1000;
+      calcStartTime.value = startTime.value * scaleRate.value + timeBuffer;
+      console.log((calcEndTime.value - record.calcStartTime) / 1000);
       resizeScaleBar();
       resizePlayBar();
-      drawTick(distance);
+      drawTick(buffer);
     });
-    watch(endTime, () => {
+
+    throttledWatch(endTime, () => {
+      // eslint-disable-next-line max-len,no-mixed-operators
+      const buffer = (calcStartTime.value / 1000) * unitSecondLength.value / scaleRate.value - record.leftAnchor;
+      // eslint-disable-next-line max-len,no-mixed-operators
+      console.log((calcStartTime.value / 1000) * unitSecondLength.value / scaleRate.value, record.leftAnchor);
+      const timeBuffer = (buffer / (unitSecondLength.value / scaleRate.value)) * 1000;
+      calcEndTime.value = endTime.value * scaleRate.value + timeBuffer;
+      // console.log(buffer);
       resizeScaleBar();
       resizePlayBar();
-      drawTick();
-    });
+      drawTick(buffer);
+    }, { throttle: 16 });
+
     watch(time, () => {
       resizePlayBar();
     });
+
     watch(maxTime, () => {
       resizeDecorate();
       resizeScaleBar();
@@ -388,11 +411,15 @@ export default defineComponent({
       leftPoint.on('mousedown', ({ x }) => {
         allowLeftMove = true;
         record.leftAnchor = x;
+        record.startTime = startTime.value;
+        record.calcStartTime = calcStartTime.value;
       });
 
       rightPoint.on('mousedown', ({ x }) => {
         allowRightMove = true;
         record.rightAnchor = x;
+        record.endTime = endTime.value;
+        record.calcEndTime = calcEndTime.value;
       });
 
       centerBar.on('mousedown', ({ x }) => {
@@ -466,6 +493,9 @@ export default defineComponent({
       endTime,
       maxTime,
       scaleRate,
+      calcStartTime,
+      calcEndTime,
+      calcMaxTime,
     };
   },
 });
