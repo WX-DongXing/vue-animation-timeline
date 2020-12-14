@@ -12,7 +12,6 @@
         <span>{{ timeScale }}</span>
         <span>startTime: {{ calcStartTime }}</span>
         <span>endTime: {{ calcEndTime }}</span>
-<!--        <span>maxTime: {{ calcMaxTime }}</span>-->
         <span>scaleRate: {{ scaleRate }}</span>
         <input type="text" v-model.trim="maxTimeScale">
       </div>
@@ -44,7 +43,7 @@
 import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
-  defineComponent, onMounted, watch, ref,
+  defineComponent, onMounted, ref,
   reactive, computed, onUnmounted,
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
@@ -101,13 +100,9 @@ export default defineComponent({
     const record = reactive({
       leftPosition: 0,
       startTime: 0,
-      leftAnchor: 0,
       centerAnchor: 0,
-      rightAnchor: 0,
       endTime: 0,
       rightPosition: 0,
-      calcStartTime: 0,
-      calcEndTime: 0,
       offset: 0,
     });
 
@@ -180,14 +175,14 @@ export default defineComponent({
       const { width, height } = rect;
       // set play bar triangle x
       playBarTriangle.animate({
-        x: ((width - 20) / maxTime.value) * time.value + 10,
+        x: ((width - 20) / maxTime.value) * time.value / scaleRate.value + 10 - record.offset,
       }, animateOptions);
 
       // set play bar line x
       playBarLine.animate({
-        x1: ((width - 20) / maxTime.value) * time.value + 10,
+        x1: ((width - 20) / maxTime.value) * time.value / scaleRate.value + 10 - record.offset,
         y1: 30,
-        x2: ((width - 20) / maxTime.value) * time.value + 10,
+        x2: ((width - 20) / maxTime.value) * time.value / scaleRate.value + 10 - record.offset,
         y2: height,
       }, animateOptions);
     };
@@ -209,10 +204,8 @@ export default defineComponent({
         const axisTick = painter.addShape('line', {
           name: 'axisTick',
           attrs: {
-            // eslint-disable-next-line max-len
             x1: 10 + (index * unitSecondLength.value) / scaleRate.value - record.offset,
             y1: 40,
-            // eslint-disable-next-line max-len
             x2: 10 + (index * unitSecondLength.value) / scaleRate.value - record.offset,
             y2: 48,
             stroke: '#212121',
@@ -273,7 +266,7 @@ export default defineComponent({
       drawTick();
     }, { throttle: 16 });
 
-    throttledWatch([startTime, endTime], () => {
+    throttledWatch([startTime, endTime, maxTime], () => {
       resizeDecorate();
       calcEffect();
       resizeScaleBar();
@@ -281,16 +274,9 @@ export default defineComponent({
       drawTick();
     }, { throttle: 16 });
 
-    watch(time, () => {
+    throttledWatch(time, () => {
       resizePlayBar();
-    });
-
-    watch(maxTime, () => {
-      resizeDecorate();
-      resizeScaleBar();
-      resizePlayBar();
-      drawTick();
-    });
+    }, { throttle: 16 });
 
     onMounted(() => {
       const { width, height } = document.getElementById('painter').getBoundingClientRect();
@@ -401,18 +387,14 @@ export default defineComponent({
 
       playBarLine.toFront();
 
-      leftPoint.on('mousedown', ({ x }) => {
+      leftPoint.on('mousedown', () => {
         allowLeftMove = true;
-        record.leftAnchor = x;
         record.startTime = startTime.value;
-        record.calcStartTime = calcStartTime.value;
       });
 
-      rightPoint.on('mousedown', ({ x }) => {
+      rightPoint.on('mousedown', () => {
         allowRightMove = true;
-        record.rightAnchor = x;
         record.endTime = endTime.value;
-        record.calcEndTime = calcEndTime.value;
       });
 
       centerBar.on('mousedown', ({ x }) => {
@@ -467,8 +449,9 @@ export default defineComponent({
 
         // play bar moving
         if (allowPlayBarMove && x >= 10 && x <= width - 10) {
-          const rate = maxTime.value / (Math.round(rect.width) - 20);
-          time.value = rate * (x - 10);
+          const rate = maxTime.value / ((rect.width - 20) / scaleRate.value);
+          const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
+          time.value = rate * (x - 10) + timeBuffer;
         }
         return false;
       });
