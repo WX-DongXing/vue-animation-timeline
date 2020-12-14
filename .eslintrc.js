@@ -14,10 +14,14 @@ module.exports = {
   rules: {
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-continue': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-restricted-syntax': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-mixed-operators': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-loop-func': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'guard-for-in': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'import/extensions': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/no-var-requires': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/no-explicit-any': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/ban-ts-ignore': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'import/extensions': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-mixed-operators': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
   },
 };

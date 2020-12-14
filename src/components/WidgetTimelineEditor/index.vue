@@ -3,16 +3,23 @@
     <!-- S header area -->
     <header>
       <div class="widget-timeline-editor__icons">
-        <svg-icon icon-name="play" />
-        <svg-icon icon-name="square" />
+        <svg-icon :icon-name="isPlay ? 'pause' : 'play'" @click="handlePlay" />
+        <svg-icon icon-name="square" @click="handleReset" />
+
+        <span class="widget-timeline-editor__divider"></span>
+
+        <div class="widget-timeline-editor__control">
+          <svg-icon icon-name="corner-up-left" @click="handleBack" />
+          <svg-icon :icon-name="isRepeat ? 'repeat' : 'shuffle'" @click="handleLoop" />
+        </div>
       </div>
       <!-- / icon area -->
 
       <div class="widget-timeline-editor__title">
         <span>{{ timeScale }}</span>
-        <span>startTime: {{ calcStartTime }}</span>
-        <span>endTime: {{ calcEndTime }}</span>
-        <span>scaleRate: {{ scaleRate }}</span>
+<!--        <span>startTime: {{ calcStartTime }}</span>-->
+<!--        <span>endTime: {{ calcEndTime }}</span>-->
+<!--        <span>scaleRate: {{ scaleRate }}</span>-->
         <input type="text" v-model.trim="maxTimeScale">
       </div>
       <!-- / timescale area -->
@@ -21,18 +28,15 @@
     <!-- E header area -->
 
     <!-- S content area -->
-    <section>
-      <div class="widget-timeline-editor__content">
-        <div class="widget-timeline-editor__left">
-        </div>
-        <!-- E widget control panel -->
-
-        <div class="widget-timeline-editor__right">
-          <div id="painter"></div>
-        </div>
-        <!-- E timeline control panel  -->
-
+    <section class="widget-timeline-editor__content">
+      <div class="widget-timeline-editor__left">
       </div>
+      <!-- E widget control panel -->
+
+      <div class="widget-timeline-editor__right">
+        <div id="painter"></div>
+      </div>
+      <!-- E timeline control panel  -->
     </section>
     <!-- E content area -->
 
@@ -53,6 +57,12 @@ import useResize from '@/utils/useResize.ts';
 export default defineComponent({
   components: {
     SvgIcon,
+  },
+  data() {
+    return {
+      isPlay: false,
+      isRepeat: false,
+    };
   },
   computed: {
     timeScale() {
@@ -79,6 +89,10 @@ export default defineComponent({
     },
   },
   setup() {
+    const OFFSET = 50;
+    const TICK_MIN_LENGTH = 50;
+    const TICK_MAX_LENGTH = 150;
+
     const time = ref(0);
     const startTime = ref(0);
     const calcStartTime = ref(0);
@@ -96,7 +110,6 @@ export default defineComponent({
     let playBarLine = ref();
     let timelineAxis = ref();
     const axisTicks = ref([]);
-    const OFFSET = 50;
 
     const record = reactive({
       leftPosition: 0,
@@ -107,7 +120,6 @@ export default defineComponent({
       offset: 0,
     });
 
-    const TICK_MAX_LENGTH = 150;
     const animateOptions = {
       delay: 0,
       duration: 50,
@@ -121,9 +133,6 @@ export default defineComponent({
     const unitTickCount = computed(() => Math.trunc(maxTime.value / 1000));
     const unitLength = computed(() => (rect.width - 20) / maxTime.value);
     const unitSecondLength = computed(() => unitLength.value * 1000);
-    // const extraLength = computed(
-    //   () => Math.round(rect.width - 20 - unitTickCount.value * unitSecondLength.value),
-    // );
     const calcMaxTime = computed(
       () => maxTime.value / ((endTime.value - startTime.value) / maxTime.value),
     );
@@ -201,7 +210,14 @@ export default defineComponent({
       });
       axisTicks.value = [];
 
-      new Array(unitTickCount.value + 1).fill(null).forEach((_, index) => {
+      for (const index in new Array(unitTickCount.value + 1).fill(null)) {
+        const min = unitSecondLength.value / scaleRate.value <= TICK_MIN_LENGTH;
+        const max = unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH;
+        const minCount = Math.trunc(TICK_MIN_LENGTH / (unitSecondLength.value / scaleRate.value));
+        // eslint-disable-next-line max-len
+        if (min && minCount > 0 && index % (minCount * 2) !== 0 && +index !== +unitTickCount.value) {
+          continue;
+        }
         const axisTick = painter.addShape('line', {
           name: 'axisTick',
           attrs: {
@@ -221,14 +237,14 @@ export default defineComponent({
             ) / scaleRate.value - record.offset,
             y: 40,
             fontFamily: 'PingFang SC',
-            text: `${index}s`,
+            text: (index > 0 && index % 60 === 0) ? `${index / 60}m` : `${index}s`,
             fontSize: 12,
             fill: '#212121',
           },
         });
 
         let smallAxisTick = [];
-        if (unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH) {
+        if (max) {
           smallAxisTick = new Array(6).fill(null).map((__, i) => painter.addShape('line', {
             name: 'axisTick',
             attrs: {
@@ -247,7 +263,11 @@ export default defineComponent({
         }
 
         axisTicks.value.push(...[axisTick, axisText, ...smallAxisTick]);
-      });
+      }
+
+      // set play bar to front
+      playBarTriangle.toFront();
+      playBarLine.toFront();
     };
 
     const stopMoving = () => {
@@ -473,6 +493,25 @@ export default defineComponent({
       calcMaxTime,
     };
   },
+  methods: {
+    handlePlay() {
+      this.isPlay = !this.isPlay;
+    },
+    handleReset() {
+      this.isPlay = false;
+      this.time = 0;
+      setTimeout(() => {
+        this.isPlay = true;
+      });
+    },
+    handleBack() {
+      this.isPlay = false;
+      this.time = 0;
+    },
+    handleLoop() {
+      this.isRepeat = !this.isRepeat;
+    },
+  },
 });
 </script>
 
@@ -529,6 +568,8 @@ export default defineComponent({
     align-items: center;
     width: 320px;
     height: 100%;
+    box-sizing: border-box;
+    padding: 0 12px 0 0;
 
     svg {
       cursor: pointer;
@@ -539,6 +580,22 @@ export default defineComponent({
     }
   }
 
+  &__divider {
+    flex: none;
+    height: 16px;
+    width: 1px;
+    background: #cccccc;
+    margin: 0 12px;
+  }
+
+  &__control {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
   &__title {
     display: flex;
     flex-flow: row nowrap;
@@ -546,6 +603,8 @@ export default defineComponent({
     align-items: center;
     width: 100%;
     height: 100%;
+    box-sizing: border-box;
+    padding: 0 0 0 4px;
 
     input {
       width: 78px;
