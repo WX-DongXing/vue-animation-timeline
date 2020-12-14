@@ -150,9 +150,9 @@ export default defineComponent({
 
     const resizeScaleBar = () => {
       const { width } = rect;
-      const unitWidth = width / maxTime.value;
+      const unitWidth = (width - 20) / maxTime.value;
       record.leftPosition = startTime.value * unitWidth + 10;
-      record.rightPosition = endTime.value * unitWidth - 10;
+      record.rightPosition = endTime.value * unitWidth + 10;
 
       // set left point x position
       leftPoint.animate({
@@ -210,7 +210,6 @@ export default defineComponent({
             y2: 48,
             stroke: '#212121',
             lineWidth: 1,
-            cursor: 'move',
           },
         });
 
@@ -242,7 +241,6 @@ export default defineComponent({
               y2: 48,
               stroke: '#212121',
               lineWidth: 1,
-              cursor: 'move',
             },
           }));
         }
@@ -415,13 +413,13 @@ export default defineComponent({
       painter.on('mousemove', ({ x }) => {
         // left point moving
         if (allowLeftMove && x >= 10 && x <= record.rightPosition) {
-          const rate = (x - 10) / rect.width;
+          const rate = (x - 10) / (rect.width - 20);
           startTime.value = maxTime.value * rate;
         }
 
         // right point moving
         if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition) {
-          const rate = (x + 10) / rect.width;
+          const rate = (x - 10) / (rect.width - 20);
           endTime.value = maxTime.value * rate;
         }
 
@@ -432,7 +430,7 @@ export default defineComponent({
           && record.rightPosition <= rect.width - 10
         ) {
           const distanceDiff = x - record.centerAnchor;
-          const timeDiff = (distanceDiff / rect.width) * maxTime.value;
+          const timeDiff = (distanceDiff / (rect.width - 20)) * maxTime.value;
           if (record.startTime + timeDiff <= 0) {
             startTime.value = 0;
             endTime.value = record.endTime - record.startTime;
