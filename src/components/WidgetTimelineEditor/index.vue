@@ -431,6 +431,10 @@ export default defineComponent({
         allowPlayBarMove = true;
       });
 
+      timelineRect.on('mousedown', () => {
+        allowPlayBarMove = true;
+      });
+
       painter.on('mousemove', ({ x }) => {
         // left point moving
         if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
