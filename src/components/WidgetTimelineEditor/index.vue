@@ -108,6 +108,7 @@ export default defineComponent({
       rightPosition: 0,
       calcStartTime: 0,
       calcEndTime: 0,
+      offset: 0,
     });
 
     const TICK_MAX_LENGTH = 150;
@@ -191,7 +192,14 @@ export default defineComponent({
       }, animateOptions);
     };
 
-    const drawTick = (buffer = 0) => {
+    const calcEffect = () => {
+      record.offset = (rect.width - 20) / scaleRate.value * (startTime.value / maxTime.value);
+      const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
+      calcStartTime.value = startTime.value * scaleRate.value + timeBuffer;
+      calcEndTime.value = endTime.value * scaleRate.value + timeBuffer;
+    };
+
+    const drawTick = () => {
       axisTicks.value.forEach((axis) => {
         axis.remove(true);
       });
@@ -202,10 +210,10 @@ export default defineComponent({
           name: 'axisTick',
           attrs: {
             // eslint-disable-next-line max-len
-            x1: 10 + (index * unitSecondLength.value) / scaleRate.value - buffer,
+            x1: 10 + (index * unitSecondLength.value) / scaleRate.value - record.offset,
             y1: 40,
             // eslint-disable-next-line max-len
-            x2: 10 + (index * unitSecondLength.value) / scaleRate.value - buffer,
+            x2: 10 + (index * unitSecondLength.value) / scaleRate.value - record.offset,
             y2: 48,
             stroke: '#212121',
             lineWidth: 1,
@@ -217,7 +225,7 @@ export default defineComponent({
           attrs: {
             x: (index >= 10 ? 0 : 5) + (
               index * unitSecondLength.value
-            ) / scaleRate.value - buffer,
+            ) / scaleRate.value - record.offset,
             y: 40,
             fontFamily: 'PingFang SC',
             text: `${index}s`,
@@ -227,17 +235,17 @@ export default defineComponent({
         });
 
         let smallAxisTick = [];
-        if (unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH && false) {
+        if (unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH) {
           smallAxisTick = new Array(6).fill(null).map((__, i) => painter.addShape('line', {
             name: 'axisTick',
             attrs: {
               x1: 10 + (
                 index * unitSecondLength.value + i * (unitSecondLength.value / 5)
-              ) / scaleRate.value,
+              ) / scaleRate.value - record.offset,
               y1: 42,
               x2: 10 + (
                 index * unitSecondLength.value + i * (unitSecondLength.value / 5)
-              ) / scaleRate.value,
+              ) / scaleRate.value - record.offset,
               y2: 48,
               stroke: '#212121',
               lineWidth: 1,
@@ -257,35 +265,20 @@ export default defineComponent({
       allowPlayBarMove = false;
     };
 
-    watch(rect, () => {
+    throttledWatch(rect, () => {
       resizeDecorate();
+      calcEffect();
       resizeScaleBar();
       resizePlayBar();
       drawTick();
-    });
+    }, { throttle: 16 });
 
-    watch(startTime, () => {
-      // eslint-disable-next-line max-len
-      const buffer = 10 * unitSecondLength.value * ((1 - scaleRate.value) / scaleRate.value);
-      const timeBuffer = (buffer / (unitSecondLength.value / scaleRate.value)) * 1000;
-      calcStartTime.value = startTime.value * scaleRate.value + timeBuffer;
-      console.log((calcEndTime.value - record.calcStartTime) / 1000);
+    throttledWatch([startTime, endTime], () => {
+      resizeDecorate();
+      calcEffect();
       resizeScaleBar();
       resizePlayBar();
-      drawTick(buffer);
-    });
-
-    throttledWatch(endTime, () => {
-      // eslint-disable-next-line max-len,no-mixed-operators
-      const buffer = (calcStartTime.value / 1000) * unitSecondLength.value / scaleRate.value - record.leftAnchor;
-      // eslint-disable-next-line max-len,no-mixed-operators
-      console.log((calcStartTime.value / 1000) * unitSecondLength.value / scaleRate.value, record.leftAnchor);
-      const timeBuffer = (buffer / (unitSecondLength.value / scaleRate.value)) * 1000;
-      calcEndTime.value = endTime.value * scaleRate.value + timeBuffer;
-      // console.log(buffer);
-      resizeScaleBar();
-      resizePlayBar();
-      drawTick(buffer);
+      drawTick();
     }, { throttle: 16 });
 
     watch(time, () => {
@@ -437,8 +430,6 @@ export default defineComponent({
         allowPlayBarMove = true;
       });
 
-      document.addEventListener('mouseup', stopMoving);
-
       painter.on('mousemove', ({ x }) => {
         // left point moving
         if (allowLeftMove && x >= 10 && x <= record.rightPosition) {
@@ -458,7 +449,7 @@ export default defineComponent({
           && record.leftPosition >= 10
           && record.rightPosition <= rect.width - 10
         ) {
-          const distanceDiff = x - record.center;
+          const distanceDiff = x - record.centerAnchor;
           const timeDiff = (distanceDiff / rect.width) * maxTime.value;
           if (record.startTime + timeDiff <= 0) {
             startTime.value = 0;
@@ -481,6 +472,8 @@ export default defineComponent({
         }
         return false;
       });
+
+      document.addEventListener('mouseup', stopMoving);
     });
 
     onUnmounted(() => {

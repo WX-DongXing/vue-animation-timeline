@@ -18,5 +18,6 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/ban-ts-ignore': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'import/extensions': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-mixed-operators': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
   },
 };
