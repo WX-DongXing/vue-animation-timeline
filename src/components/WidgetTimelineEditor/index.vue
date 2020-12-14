@@ -96,6 +96,7 @@ export default defineComponent({
     let playBarLine = ref();
     let timelineAxis = ref();
     const axisTicks = ref([]);
+    const OFFSET = 50;
 
     const record = reactive({
       leftPosition: 0,
@@ -412,13 +413,13 @@ export default defineComponent({
 
       painter.on('mousemove', ({ x }) => {
         // left point moving
-        if (allowLeftMove && x >= 10 && x <= record.rightPosition) {
+        if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
           const rate = (x - 10) / (rect.width - 20);
           startTime.value = maxTime.value * rate;
         }
 
         // right point moving
-        if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition) {
+        if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
           const rate = (x - 10) / (rect.width - 20);
           endTime.value = maxTime.value * rate;
         }
@@ -427,7 +428,7 @@ export default defineComponent({
         if (
           allowCenterMove
           && record.leftPosition >= 10
-          && record.rightPosition <= rect.width - 10
+          && Math.floor(record.rightPosition) <= Math.floor(rect.width - 10)
         ) {
           const distanceDiff = x - record.centerAnchor;
           const timeDiff = (distanceDiff / (rect.width - 20)) * maxTime.value;
