@@ -10,16 +10,13 @@
 
         <div class="widget-timeline-editor__control">
           <svg-icon icon-name="corner-up-left" @click="handleBack" />
-          <svg-icon :icon-name="isRepeat ? 'repeat' : 'shuffle'" @click="handleLoop" />
+          <svg-icon :icon-name="isRepeat ? 'repeat' : 'shuffle'" @click="handleRepeat" />
         </div>
       </div>
       <!-- / icon area -->
 
       <div class="widget-timeline-editor__title">
         <span>{{ timeScale }}</span>
-<!--        <span>startTime: {{ calcStartTime }}</span>-->
-<!--        <span>endTime: {{ calcEndTime }}</span>-->
-<!--        <span>scaleRate: {{ scaleRate }}</span>-->
         <input type="text" v-model.trim="maxTimeScale">
       </div>
       <!-- / timescale area -->
@@ -58,34 +55,10 @@ export default defineComponent({
   components: {
     SvgIcon,
   },
-  data() {
-    return {
-      isPlay: false,
-      isRepeat: false,
-    };
-  },
-  computed: {
-    timeScale() {
-      return dayjs(this.time).format('mm:ss:SSS');
-    },
-    maxTimeScale: {
-      get() {
-        return dayjs(this.maxTime).format('mm:ss:SSS');
-      },
-      set(time) {
-        const pattern = /^([0-5][0-9]):([0-5][0-9]):([0-9][0-9][0-9])$/;
-        if (pattern.test(time)) {
-          const [, mm, ss, SSS] = time.match(pattern);
-          const maxTime = +mm * 60 * 1000 + +ss * 1000 + +SSS;
-          this.maxTime = maxTime;
-          if (+maxTime <= this.endTime) {
-            if (this.startTime >= +maxTime) {
-              this.startTime = 0;
-            }
-            this.endTime = +maxTime || 1000;
-          }
-        }
-      },
+  props: {
+    widgets: {
+      type: Array,
+      default: () => ([]),
     },
   },
   setup() {
@@ -110,6 +83,8 @@ export default defineComponent({
     let playBarLine = ref();
     let timelineAxis = ref();
     const axisTicks = ref([]);
+    const isPlay = ref(false);
+    const isRepeat = ref(false);
 
     const record = reactive({
       leftPosition: 0,
@@ -137,6 +112,45 @@ export default defineComponent({
       () => maxTime.value / ((endTime.value - startTime.value) / maxTime.value),
     );
     const scaleRate = computed(() => (endTime.value - startTime.value) / maxTime.value);
+    const timeScale = computed(() => dayjs(time.value).format('mm:ss:SSS'));
+    const maxTimeScale = computed({
+      get: () => dayjs(maxTime.value).format('mm:ss:SSS'),
+      set: (val) => {
+        const pattern = /^([0-5][0-9]):([0-5][0-9]):([0-9][0-9][0-9])$/;
+        if (pattern.test(val)) {
+          const [, mm, ss, SSS] = val.match(pattern);
+          const maxTimeValue = +mm * 60 * 1000 + +ss * 1000 + +SSS;
+          maxTime.value = maxTimeValue;
+          if (+maxTimeValue <= endTime.value) {
+            if (startTime.value >= +maxTimeValue) {
+              startTime.value = 0;
+            }
+            endTime.value = +maxTimeValue || 1000;
+          }
+        }
+      },
+    });
+
+    const handlePlay = () => {
+      isPlay.value = !isPlay.value;
+    };
+
+    const handleReset = () => {
+      isPlay.value = false;
+      time.value = 0;
+      setTimeout(() => {
+        isPlay.value = true;
+      });
+    };
+
+    const handleBack = () => {
+      isPlay.value = false;
+      time.value = 0;
+    };
+
+    const handleRepeat = () => {
+      isRepeat.value = !isRepeat.value;
+    };
 
     const resizeDecorate = () => {
       const { width, height } = rect;
@@ -270,7 +284,72 @@ export default defineComponent({
       playBarLine.toFront();
     };
 
-    const stopMoving = () => {
+    const handleLeftPointMouseDown = () => {
+      allowLeftMove = true;
+      record.startTime = startTime.value;
+    };
+
+    const handleRightPointMouseDown = () => {
+      allowRightMove = true;
+      record.endTime = endTime.value;
+    };
+
+    const handleCenterBarMouseDown = ({ x }) => {
+      allowCenterMove = true;
+      record.startTime = startTime.value;
+      record.centerAnchor = x;
+      record.endTime = endTime.value;
+    };
+
+    const handleAllowPlayBarMove = () => {
+      allowPlayBarMove = true;
+    };
+
+    const handlePainterMouseMove = ({ x }) => {
+      // left point moving
+      if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
+        const rate = (x - 10) / (rect.width - 20);
+        startTime.value = maxTime.value * rate;
+      }
+
+      // right point moving
+      if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
+        const rate = (x - 10) / (rect.width - 20);
+        endTime.value = maxTime.value * rate;
+      }
+
+      // center rect moving
+      if (
+        allowCenterMove
+        && record.leftPosition >= 10
+        && Math.floor(record.rightPosition) <= Math.floor(rect.width - 10)
+      ) {
+        const distanceDiff = x - record.centerAnchor;
+        const timeDiff = (distanceDiff / (rect.width - 20)) * maxTime.value;
+        if (record.startTime + timeDiff <= 0) {
+          startTime.value = 0;
+          endTime.value = record.endTime - record.startTime;
+          return false;
+        }
+        if (record.endTime + timeDiff >= maxTime.value) {
+          startTime.value = maxTime.value - (record.endTime - record.startTime);
+          endTime.value = maxTime.value;
+          return false;
+        }
+        startTime.value = record.startTime + timeDiff;
+        endTime.value = record.endTime + timeDiff;
+      }
+
+      // play bar moving
+      if (allowPlayBarMove && x >= 10 && x <= rect.width - 10) {
+        const rate = maxTime.value / ((rect.width - 20) / scaleRate.value);
+        const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
+        time.value = rate * (x - 10) + timeBuffer;
+      }
+      return false;
+    };
+
+    const handleStopMoving = () => {
       allowLeftMove = false;
       allowRightMove = false;
       allowCenterMove = false;
@@ -286,7 +365,6 @@ export default defineComponent({
     }, { throttle: 16 });
 
     throttledWatch([startTime, endTime, maxTime], () => {
-      resizeDecorate();
       calcEffect();
       resizeScaleBar();
       resizePlayBar();
@@ -402,88 +480,32 @@ export default defineComponent({
         },
       });
 
-      playBarTriangle.toFront();
+      leftPoint.on('mousedown', handleLeftPointMouseDown);
 
-      playBarLine.toFront();
+      rightPoint.on('mousedown', handleRightPointMouseDown);
 
-      leftPoint.on('mousedown', () => {
-        allowLeftMove = true;
-        record.startTime = startTime.value;
-      });
+      centerBar.on('mousedown', handleCenterBarMouseDown);
 
-      rightPoint.on('mousedown', () => {
-        allowRightMove = true;
-        record.endTime = endTime.value;
-      });
+      playBarTriangle.on('mousedown', handleAllowPlayBarMove);
 
-      centerBar.on('mousedown', ({ x }) => {
-        allowCenterMove = true;
-        record.startTime = startTime.value;
-        record.centerAnchor = x;
-        record.endTime = endTime.value;
-      });
+      playBarLine.on('mousedown', handleAllowPlayBarMove);
 
-      playBarTriangle.on('mousedown', () => {
-        allowPlayBarMove = true;
-      });
+      timelineRect.on('mousedown', handleAllowPlayBarMove);
 
-      playBarLine.on('mousedown', () => {
-        allowPlayBarMove = true;
-      });
+      painter.on('mousemove', handlePainterMouseMove);
 
-      timelineRect.on('mousedown', () => {
-        allowPlayBarMove = true;
-      });
-
-      painter.on('mousemove', ({ x }) => {
-        // left point moving
-        if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
-          const rate = (x - 10) / (rect.width - 20);
-          startTime.value = maxTime.value * rate;
-        }
-
-        // right point moving
-        if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
-          const rate = (x - 10) / (rect.width - 20);
-          endTime.value = maxTime.value * rate;
-        }
-
-        // center rect moving
-        if (
-          allowCenterMove
-          && record.leftPosition >= 10
-          && Math.floor(record.rightPosition) <= Math.floor(rect.width - 10)
-        ) {
-          const distanceDiff = x - record.centerAnchor;
-          const timeDiff = (distanceDiff / (rect.width - 20)) * maxTime.value;
-          if (record.startTime + timeDiff <= 0) {
-            startTime.value = 0;
-            endTime.value = record.endTime - record.startTime;
-            return false;
-          }
-          if (record.endTime + timeDiff >= maxTime.value) {
-            startTime.value = maxTime.value - (record.endTime - record.startTime);
-            endTime.value = maxTime.value;
-            return false;
-          }
-          startTime.value = record.startTime + timeDiff;
-          endTime.value = record.endTime + timeDiff;
-        }
-
-        // play bar moving
-        if (allowPlayBarMove && x >= 10 && x <= width - 10) {
-          const rate = maxTime.value / ((rect.width - 20) / scaleRate.value);
-          const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
-          time.value = rate * (x - 10) + timeBuffer;
-        }
-        return false;
-      });
-
-      document.addEventListener('mouseup', stopMoving);
+      document.addEventListener('mouseup', handleStopMoving);
     });
 
     onUnmounted(() => {
-      document.removeEventListener('mouseup', stopMoving);
+      leftPoint.off('mousedown', handleLeftPointMouseDown);
+      rightPoint.off('mousedown', handleRightPointMouseDown);
+      centerBar.off('mousedown', handleCenterBarMouseDown);
+      playBarTriangle.off('mousedown', handleAllowPlayBarMove);
+      playBarLine.off('mousedown', handleAllowPlayBarMove);
+      timelineRect.off('mousedown', handleAllowPlayBarMove);
+      painter.off('mousemove', handlePainterMouseMove);
+      document.removeEventListener('mouseup', handleStopMoving);
     });
 
     return {
@@ -492,29 +514,18 @@ export default defineComponent({
       endTime,
       maxTime,
       scaleRate,
+      timeScale,
+      maxTimeScale,
       calcStartTime,
       calcEndTime,
       calcMaxTime,
+      isPlay,
+      isRepeat,
+      handlePlay,
+      handleReset,
+      handleBack,
+      handleRepeat,
     };
-  },
-  methods: {
-    handlePlay() {
-      this.isPlay = !this.isPlay;
-    },
-    handleReset() {
-      this.isPlay = false;
-      this.time = 0;
-      setTimeout(() => {
-        this.isPlay = true;
-      });
-    },
-    handleBack() {
-      this.isPlay = false;
-      this.time = 0;
-    },
-    handleLoop() {
-      this.isRepeat = !this.isRepeat;
-    },
   },
 });
 </script>
