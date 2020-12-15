@@ -27,6 +27,21 @@
     <!-- S content area -->
     <section class="widget-timeline-editor__content">
       <div class="widget-timeline-editor__left">
+        <div class="widget-timeline-editor__menu"></div>
+
+        <div class="widget-timeline-editor__widgets">
+          <div
+            class="widget-timeline-editor__widget"
+            v-for="widget in widgets"
+            :key="widget.key"
+          >
+            <svg-icon
+              class="widget-timeline-editor__prefix"
+              icon-name="chevron-right"
+            />
+            <span>{{ widget.name }}</span>
+          </div>
+        </div>
       </div>
       <!-- E widget control panel -->
 
@@ -45,11 +60,15 @@ import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
   defineComponent, onMounted, ref,
-  reactive, computed, onUnmounted,
+  reactive, computed, onUnmounted, toRefs,
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
 import SvgIcon from '@/components/SvgIcon.vue';
 import useResize from '@/utils/useResize.ts';
+
+const OFFSET = 50;
+const TICK_MIN_LENGTH = 50;
+const TICK_MAX_LENGTH = 150;
 
 export default defineComponent({
   components: {
@@ -61,10 +80,10 @@ export default defineComponent({
       default: () => ([]),
     },
   },
-  setup() {
-    const OFFSET = 50;
-    const TICK_MIN_LENGTH = 50;
-    const TICK_MAX_LENGTH = 150;
+  setup(props) {
+    const { widgets } = toRefs(props);
+    const { rect } = useResize();
+    console.log(widgets.value);
 
     const time = ref(0);
     const startTime = ref(0);
@@ -72,7 +91,6 @@ export default defineComponent({
     const endTime = ref(10000);
     const calcEndTime = ref(10000);
     const maxTime = ref(10000);
-    const { rect } = useResize();
     let painter = ref();
     let timeRect = ref();
     let timelineRect = ref();
@@ -150,6 +168,206 @@ export default defineComponent({
 
     const handleRepeat = () => {
       isRepeat.value = !isRepeat.value;
+    };
+
+    const handleLeftPointMouseDown = () => {
+      allowLeftMove = true;
+      record.startTime = startTime.value;
+    };
+
+    const handleRightPointMouseDown = () => {
+      allowRightMove = true;
+      record.endTime = endTime.value;
+    };
+
+    const handleCenterBarMouseDown = ({ x }) => {
+      allowCenterMove = true;
+      record.startTime = startTime.value;
+      record.centerAnchor = x;
+      record.endTime = endTime.value;
+    };
+
+    const handleAllowPlayBarMove = () => {
+      allowPlayBarMove = true;
+    };
+
+    const handlePainterMouseMove = ({ x }) => {
+      // left point moving
+      if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
+        const rate = (x - 10) / (rect.width - 20);
+        startTime.value = maxTime.value * rate;
+      }
+
+      // right point moving
+      if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
+        const rate = (x - 10) / (rect.width - 20);
+        endTime.value = maxTime.value * rate;
+      }
+
+      // center rect moving
+      if (
+        allowCenterMove
+        && record.leftPosition >= 10
+        && Math.floor(record.rightPosition) <= Math.floor(rect.width - 10)
+      ) {
+        const distanceDiff = x - record.centerAnchor;
+        const timeDiff = (distanceDiff / (rect.width - 20)) * maxTime.value;
+        if (record.startTime + timeDiff <= 0) {
+          startTime.value = 0;
+          endTime.value = record.endTime - record.startTime;
+          return false;
+        }
+        if (record.endTime + timeDiff >= maxTime.value) {
+          startTime.value = maxTime.value - (record.endTime - record.startTime);
+          endTime.value = maxTime.value;
+          return false;
+        }
+        startTime.value = record.startTime + timeDiff;
+        endTime.value = record.endTime + timeDiff;
+      }
+
+      // play bar moving
+      if (allowPlayBarMove && x >= 10 && x <= rect.width - 10) {
+        const rate = maxTime.value / ((rect.width - 20) / scaleRate.value);
+        const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
+        time.value = rate * (x - 10) + timeBuffer;
+      }
+      return false;
+    };
+
+    const handleStopMoving = () => {
+      allowLeftMove = false;
+      allowRightMove = false;
+      allowCenterMove = false;
+      allowPlayBarMove = false;
+    };
+
+    const addEvents = () => {
+      leftPoint.on('mousedown', handleLeftPointMouseDown);
+      rightPoint.on('mousedown', handleRightPointMouseDown);
+      centerBar.on('mousedown', handleCenterBarMouseDown);
+      playBarTriangle.on('mousedown', handleAllowPlayBarMove);
+      playBarLine.on('mousedown', handleAllowPlayBarMove);
+      timelineRect.on('mousedown', handleAllowPlayBarMove);
+      painter.on('mousemove', handlePainterMouseMove);
+      document.addEventListener('mouseup', handleStopMoving);
+    };
+
+    const removeEvents = () => {
+      leftPoint.off('mousedown', handleLeftPointMouseDown);
+      rightPoint.off('mousedown', handleRightPointMouseDown);
+      centerBar.off('mousedown', handleCenterBarMouseDown);
+      playBarTriangle.off('mousedown', handleAllowPlayBarMove);
+      playBarLine.off('mousedown', handleAllowPlayBarMove);
+      timelineRect.off('mousedown', handleAllowPlayBarMove);
+      painter.off('mousemove', handlePainterMouseMove);
+      document.removeEventListener('mouseup', handleStopMoving);
+    };
+
+    const initCanvas = () => {
+      const { width, height } = document.getElementById('painter').getBoundingClientRect();
+      // init painter
+      painter = new Canvas({
+        container: 'painter',
+        width,
+        height,
+      });
+
+      timeRect = painter.addShape('rect', {
+        name: 'timeBar',
+        attrs: {
+          x: 0,
+          y: 0,
+          width,
+          height: 20,
+          fill: '#F5F5F6',
+        },
+      });
+
+      leftPoint = painter.addShape('circle', {
+        attrs: {
+          x: 10,
+          y: 10,
+          r: 6,
+          fill: '#757575',
+          lineWidth: 0,
+          cursor: 'ew-resize',
+        },
+      });
+
+      rightPoint = painter.addShape('circle', {
+        attrs: {
+          x: width - 10,
+          y: 10,
+          r: 6,
+          fill: '#757575',
+          lineWidth: 0,
+          cursor: 'ew-resize',
+        },
+      });
+
+      centerBar = painter.addShape('rect', {
+        name: 'timeBar',
+        attrs: {
+          x: 10,
+          y: 4,
+          width: width - 20,
+          height: 12,
+          fill: '#bdbdbd',
+          lineWidth: 0,
+          cursor: 'move',
+        },
+      });
+
+      timelineRect = painter.addShape('rect', {
+        name: 'timelineBar',
+        attrs: {
+          x: 0,
+          y: 20,
+          width,
+          height: 36,
+          fill: '#eeeeee',
+        },
+      });
+
+      playBarTriangle = painter.addShape('marker', {
+        name: 'playBarTriangle',
+        attrs: {
+          x: 10,
+          y: 30,
+          r: 8,
+          fill: '#1890FF',
+          lineWidth: 0,
+          cursor: 'move',
+          symbol: 'triangle-down',
+        },
+      });
+
+      playBarLine = painter.addShape('line', {
+        name: 'playBarLine',
+        attrs: {
+          x1: 10,
+          y1: 30,
+          x2: 10,
+          y2: height,
+          stroke: '#1890FF',
+          lineWidth: 1,
+          cursor: 'move',
+        },
+      });
+
+      timelineAxis = painter.addShape('line', {
+        name: 'playBarLine',
+        attrs: {
+          x1: 10,
+          y1: 48,
+          x2: width - 10,
+          y2: 48,
+          stroke: '#212121',
+          lineWidth: 1,
+          cursor: 'move',
+        },
+      });
     };
 
     const resizeDecorate = () => {
@@ -284,78 +502,6 @@ export default defineComponent({
       playBarLine.toFront();
     };
 
-    const handleLeftPointMouseDown = () => {
-      allowLeftMove = true;
-      record.startTime = startTime.value;
-    };
-
-    const handleRightPointMouseDown = () => {
-      allowRightMove = true;
-      record.endTime = endTime.value;
-    };
-
-    const handleCenterBarMouseDown = ({ x }) => {
-      allowCenterMove = true;
-      record.startTime = startTime.value;
-      record.centerAnchor = x;
-      record.endTime = endTime.value;
-    };
-
-    const handleAllowPlayBarMove = () => {
-      allowPlayBarMove = true;
-    };
-
-    const handlePainterMouseMove = ({ x }) => {
-      // left point moving
-      if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
-        const rate = (x - 10) / (rect.width - 20);
-        startTime.value = maxTime.value * rate;
-      }
-
-      // right point moving
-      if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
-        const rate = (x - 10) / (rect.width - 20);
-        endTime.value = maxTime.value * rate;
-      }
-
-      // center rect moving
-      if (
-        allowCenterMove
-        && record.leftPosition >= 10
-        && Math.floor(record.rightPosition) <= Math.floor(rect.width - 10)
-      ) {
-        const distanceDiff = x - record.centerAnchor;
-        const timeDiff = (distanceDiff / (rect.width - 20)) * maxTime.value;
-        if (record.startTime + timeDiff <= 0) {
-          startTime.value = 0;
-          endTime.value = record.endTime - record.startTime;
-          return false;
-        }
-        if (record.endTime + timeDiff >= maxTime.value) {
-          startTime.value = maxTime.value - (record.endTime - record.startTime);
-          endTime.value = maxTime.value;
-          return false;
-        }
-        startTime.value = record.startTime + timeDiff;
-        endTime.value = record.endTime + timeDiff;
-      }
-
-      // play bar moving
-      if (allowPlayBarMove && x >= 10 && x <= rect.width - 10) {
-        const rate = maxTime.value / ((rect.width - 20) / scaleRate.value);
-        const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
-        time.value = rate * (x - 10) + timeBuffer;
-      }
-      return false;
-    };
-
-    const handleStopMoving = () => {
-      allowLeftMove = false;
-      allowRightMove = false;
-      allowCenterMove = false;
-      allowPlayBarMove = false;
-    };
-
     throttledWatch(rect, () => {
       resizeDecorate();
       calcEffect();
@@ -376,136 +522,12 @@ export default defineComponent({
     }, { throttle: 16 });
 
     onMounted(() => {
-      const { width, height } = document.getElementById('painter').getBoundingClientRect();
-      // init painter
-      painter = new Canvas({
-        container: 'painter',
-        width,
-        height,
-      });
-
-      timeRect = painter.addShape('rect', {
-        name: 'timeBar',
-        attrs: {
-          x: 0,
-          y: 0,
-          width,
-          height: 20,
-          fill: '#F5F5F6',
-        },
-      });
-
-      leftPoint = painter.addShape('circle', {
-        attrs: {
-          x: 10,
-          y: 10,
-          r: 6,
-          fill: '#757575',
-          lineWidth: 0,
-          cursor: 'ew-resize',
-        },
-      });
-
-      rightPoint = painter.addShape('circle', {
-        attrs: {
-          x: width - 10,
-          y: 10,
-          r: 6,
-          fill: '#757575',
-          lineWidth: 0,
-          cursor: 'ew-resize',
-        },
-      });
-
-      centerBar = painter.addShape('rect', {
-        name: 'timeBar',
-        attrs: {
-          x: 10,
-          y: 4,
-          width: width - 20,
-          height: 12,
-          fill: '#bdbdbd',
-          lineWidth: 0,
-          cursor: 'move',
-        },
-      });
-
-      timelineRect = painter.addShape('rect', {
-        name: 'timelineBar',
-        attrs: {
-          x: 0,
-          y: 20,
-          width,
-          height: 36,
-          fill: '#eeeeee',
-        },
-      });
-
-      playBarTriangle = painter.addShape('marker', {
-        name: 'playBarTriangle',
-        attrs: {
-          x: 10,
-          y: 30,
-          r: 8,
-          fill: '#1890FF',
-          lineWidth: 0,
-          cursor: 'move',
-          symbol: 'triangle-down',
-        },
-      });
-
-      playBarLine = painter.addShape('line', {
-        name: 'playBarLine',
-        attrs: {
-          x1: 10,
-          y1: 30,
-          x2: 10,
-          y2: height,
-          stroke: '#1890FF',
-          lineWidth: 1,
-          cursor: 'move',
-        },
-      });
-
-      timelineAxis = painter.addShape('line', {
-        name: 'playBarLine',
-        attrs: {
-          x1: 10,
-          y1: 48,
-          x2: width - 10,
-          y2: 48,
-          stroke: '#212121',
-          lineWidth: 1,
-          cursor: 'move',
-        },
-      });
-
-      leftPoint.on('mousedown', handleLeftPointMouseDown);
-
-      rightPoint.on('mousedown', handleRightPointMouseDown);
-
-      centerBar.on('mousedown', handleCenterBarMouseDown);
-
-      playBarTriangle.on('mousedown', handleAllowPlayBarMove);
-
-      playBarLine.on('mousedown', handleAllowPlayBarMove);
-
-      timelineRect.on('mousedown', handleAllowPlayBarMove);
-
-      painter.on('mousemove', handlePainterMouseMove);
-
-      document.addEventListener('mouseup', handleStopMoving);
+      initCanvas();
+      addEvents();
     });
 
     onUnmounted(() => {
-      leftPoint.off('mousedown', handleLeftPointMouseDown);
-      rightPoint.off('mousedown', handleRightPointMouseDown);
-      centerBar.off('mousedown', handleCenterBarMouseDown);
-      playBarTriangle.off('mousedown', handleAllowPlayBarMove);
-      playBarLine.off('mousedown', handleAllowPlayBarMove);
-      timelineRect.off('mousedown', handleAllowPlayBarMove);
-      painter.off('mousemove', handlePainterMouseMove);
-      document.removeEventListener('mouseup', handleStopMoving);
+      removeEvents();
     });
 
     return {
@@ -564,14 +586,56 @@ export default defineComponent({
 
   &__left {
     float: left;
-    width: 320px;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    width: 240px;
     height: 100%;
     border-right: 1px solid #efefef;
   }
 
+  &__menu {
+    height: 56px;
+    border-bottom: 1px solid #efefef;
+  }
+
+  &__widgets {
+    height: calc(100% - 56px);
+    overflow: auto;
+  }
+
+  &__widget {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    height: 32px;
+    width: 100%;
+    font-size: 12px;
+    border-bottom: 1px solid #efefef;
+    box-sizing: border-box;
+    padding-right: 12px;
+
+    span {
+      cursor: pointer;
+    }
+  }
+
+  &__prefix {
+    font-size: 16px;
+    margin-right: 4px;
+    cursor: pointer;
+    transition: transform 150ms;
+    transform: rotate(0);
+
+    &--active {
+      transform: rotate(90deg);
+    }
+  }
+
   &__right {
     float: right;
-    width: calc(100% - 321px);
+    width: calc(100% - 241px);
     height: 100%;
   }
 
@@ -581,7 +645,7 @@ export default defineComponent({
     flex-flow: row nowrap;
     justify-content: flex-start;
     align-items: center;
-    width: 320px;
+    width: 240px;
     height: 100%;
     box-sizing: border-box;
     padding: 0 12px 0 0;
