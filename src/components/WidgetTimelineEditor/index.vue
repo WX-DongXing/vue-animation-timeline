@@ -27,20 +27,27 @@
     <!-- S content area -->
     <section class="widget-timeline-editor__content">
       <div class="widget-timeline-editor__left">
-        <div class="widget-timeline-editor__menu"></div>
+        <div class="widget-timeline-editor__menu">
+
+          <div class="widget-timeline-editor__sign">
+            <div>
+              <svg-icon icon-name="eye-off" />
+              <svg-icon icon-name="lock" />
+            </div>
+
+            <div>
+              <svg-icon icon-name="activity" />
+              <svg-icon icon-name="layers" />
+            </div>
+          </div>
+        </div>
 
         <div class="widget-timeline-editor__widgets">
-          <div
-            class="widget-timeline-editor__widget"
-            v-for="widget in widgets"
-            :key="widget.key"
-          >
-            <svg-icon
-              class="widget-timeline-editor__prefix"
-              icon-name="chevron-right"
-            />
-            <span>{{ widget.name }}</span>
-          </div>
+          <widget
+            v-for="(option, index) in options"
+            :option="option"
+            :key="index"
+          />
         </div>
       </div>
       <!-- E widget control panel -->
@@ -63,16 +70,23 @@ import {
   reactive, computed, onUnmounted, toRefs,
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
-import SvgIcon from '@/components/SvgIcon.vue';
 import useResize from '@/utils/useResize.ts';
+import SvgIcon from './modules/SvgIcon';
+import Widget from './modules/Widget';
 
 const OFFSET = 50;
 const TICK_MIN_LENGTH = 50;
 const TICK_MAX_LENGTH = 150;
+const DEFAULT_OPTION = {
+  isExpanded: false,
+  visible: true,
+  isLocked: false,
+};
 
 export default defineComponent({
   components: {
     SvgIcon,
+    Widget,
   },
   props: {
     widgets: {
@@ -83,8 +97,9 @@ export default defineComponent({
   setup(props) {
     const { widgets } = toRefs(props);
     const { rect } = useResize();
-    console.log(widgets.value);
-
+    const options = reactive(
+      [...widgets.value].map((widget) => reactive({ ...widget, ...DEFAULT_OPTION })),
+    );
     const time = ref(0);
     const startTime = ref(0);
     const calcStartTime = ref(0);
@@ -543,6 +558,7 @@ export default defineComponent({
       calcMaxTime,
       isPlay,
       isRepeat,
+      options,
       handlePlay,
       handleReset,
       handleBack,
@@ -595,42 +611,36 @@ export default defineComponent({
   }
 
   &__menu {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-end;
     height: 56px;
     border-bottom: 1px solid #efefef;
+  }
+
+  &__sign {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 24px;
+    box-sizing: border-box;
+    padding-right: 12px;
+
+    svg {
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    svg + svg {
+      margin-left: 12px;
+    }
   }
 
   &__widgets {
     height: calc(100% - 56px);
     overflow: auto;
-  }
-
-  &__widget {
-    display: flex;
-    flex-flow: row nowrap;
-    justify-content: flex-start;
-    align-items: center;
-    height: 32px;
-    width: 100%;
-    font-size: 12px;
-    border-bottom: 1px solid #efefef;
-    box-sizing: border-box;
-    padding-right: 12px;
-
-    span {
-      cursor: pointer;
-    }
-  }
-
-  &__prefix {
-    font-size: 16px;
-    margin-right: 4px;
-    cursor: pointer;
-    transition: transform 150ms;
-    transform: rotate(0);
-
-    &--active {
-      transform: rotate(90deg);
-    }
   }
 
   &__right {

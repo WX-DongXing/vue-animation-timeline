@@ -1,7 +1,6 @@
 import {
   onMounted, onUnmounted, reactive, ref,
 } from 'vue-demi';
-// @ts-ignore
 import { useThrottleFn } from '@vueuse/core';
 
 export default function useResize() {
