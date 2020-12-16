@@ -40,7 +40,7 @@ export default defineComponent({
 .svg-icon {
   width: 1em;
   height: 1em;
-  fill: red;
+  fill: currentColor;
   overflow: hidden;
 }
 </style>

@@ -185,28 +185,28 @@ export default defineComponent({
       isRepeat.value = !isRepeat.value;
     };
 
-    const handleLeftPointMouseDown = () => {
+    const onLeftPointMouseDown = () => {
       allowLeftMove = true;
       record.startTime = startTime.value;
     };
 
-    const handleRightPointMouseDown = () => {
+    const onRightPointMouseDown = () => {
       allowRightMove = true;
       record.endTime = endTime.value;
     };
 
-    const handleCenterBarMouseDown = ({ x }) => {
+    const onCenterBarMouseDown = ({ x }) => {
       allowCenterMove = true;
       record.startTime = startTime.value;
       record.centerAnchor = x;
       record.endTime = endTime.value;
     };
 
-    const handleAllowPlayBarMove = () => {
+    const onAllowPlayBarMove = () => {
       allowPlayBarMove = true;
     };
 
-    const handlePainterMouseMove = ({ x }) => {
+    const onPainterMouseMove = ({ x }) => {
       // left point moving
       if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
         const rate = (x - 10) / (rect.width - 20);
@@ -250,7 +250,7 @@ export default defineComponent({
       return false;
     };
 
-    const handleStopMoving = () => {
+    const onStopMoving = () => {
       allowLeftMove = false;
       allowRightMove = false;
       allowCenterMove = false;
@@ -258,25 +258,25 @@ export default defineComponent({
     };
 
     const addEvents = () => {
-      leftPoint.on('mousedown', handleLeftPointMouseDown);
-      rightPoint.on('mousedown', handleRightPointMouseDown);
-      centerBar.on('mousedown', handleCenterBarMouseDown);
-      playBarTriangle.on('mousedown', handleAllowPlayBarMove);
-      playBarLine.on('mousedown', handleAllowPlayBarMove);
-      timelineRect.on('mousedown', handleAllowPlayBarMove);
-      painter.on('mousemove', handlePainterMouseMove);
-      document.addEventListener('mouseup', handleStopMoving);
+      leftPoint.on('mousedown', onLeftPointMouseDown);
+      rightPoint.on('mousedown', onRightPointMouseDown);
+      centerBar.on('mousedown', onCenterBarMouseDown);
+      playBarTriangle.on('mousedown', onAllowPlayBarMove);
+      playBarLine.on('mousedown', onAllowPlayBarMove);
+      timelineRect.on('mousedown', onAllowPlayBarMove);
+      painter.on('mousemove', onPainterMouseMove);
+      document.addEventListener('mouseup', onStopMoving);
     };
 
     const removeEvents = () => {
-      leftPoint.off('mousedown', handleLeftPointMouseDown);
-      rightPoint.off('mousedown', handleRightPointMouseDown);
-      centerBar.off('mousedown', handleCenterBarMouseDown);
-      playBarTriangle.off('mousedown', handleAllowPlayBarMove);
-      playBarLine.off('mousedown', handleAllowPlayBarMove);
-      timelineRect.off('mousedown', handleAllowPlayBarMove);
-      painter.off('mousemove', handlePainterMouseMove);
-      document.removeEventListener('mouseup', handleStopMoving);
+      leftPoint.off('mousedown', onLeftPointMouseDown);
+      rightPoint.off('mousedown', onRightPointMouseDown);
+      centerBar.off('mousedown', onCenterBarMouseDown);
+      playBarTriangle.off('mousedown', onAllowPlayBarMove);
+      playBarLine.off('mousedown', onAllowPlayBarMove);
+      timelineRect.off('mousedown', onAllowPlayBarMove);
+      painter.off('mousemove', onPainterMouseMove);
+      document.removeEventListener('mouseup', onStopMoving);
     };
 
     const initCanvas = () => {
