@@ -1,11 +1,11 @@
-export interface Animation {
+export interface AnimationType {
   title: string;
   icon: string;
   prop: string;
   desc: string;
 }
 
-export const ANIMATIONS: Animation[] = [
+export const ANIMATIONTYPES: AnimationType[] = [
   {
     title: 'width', icon: 'more-horizontal', prop: 'width', desc: '',
   },
