@@ -27,22 +27,30 @@
       <div class="widget__suffix">
         <svg-icon icon-name="activity" />
         <svg-icon icon-name="layers" @click="handleShowAnimations"/>
+
+        <div class="widget__animations">
+          <span
+            v-for="animationType in animationTypes"
+            :class="{'widget__animations--active': isActive(animationType.prop)}"
+            :key="animationType.prop"
+            :title="animationType.title"
+            @click="handleSelectAnimation(animationType)"
+          >
+            <svg-icon :icon-name="animationType.icon" /> {{ animationType.desc }}
+          </span>
+        </div>
       </div>
     </div>
 
-    <div class="widget__animations" v-if="isShowAnimations">
-      <span
-        v-for="animationType in animationTypes"
-        :class="{'widget__animations--active': isActive(animationType.prop)}"
-        :key="animationType.prop"
-        :title="animationType.title"
-        @click="handleSelectAnimation(animationType)"
+    <div class="widget__content" v-if="isExpanded">
+      <div
+        class="widget__row"
+        v-for="animation in animations"
+        :key="animation.prop"
       >
-        <svg-icon :icon-name="animationType.icon" /> {{ animationType.desc }}
-      </span>
+        <p>{{ animation.prop }}</p>
+      </div>
     </div>
-
-    <div class="widget__row"></div>
   </div>
 </template>
 
@@ -51,7 +59,7 @@ import {
   computed, ref,
   defineComponent, toRefs, reactive,
 } from 'vue-demi';
-import { ANIMATIONTYPES, AnimationType } from '@/utils/Constant.ts';
+import { ANIMATION_TYPES, AnimationType } from '@/utils/Constant.ts';
 import SvgIcon from './SvgIcon.vue';
 
 export default defineComponent({
@@ -66,7 +74,7 @@ export default defineComponent({
   },
   setup(props) {
     const { option } = toRefs(props);
-    const animationTypes = reactive(ANIMATIONTYPES);
+    const animationTypes = reactive(ANIMATION_TYPES);
     const isShowAnimations = ref(false);
     const name = computed(() => option.value.name);
     const visible = computed(() => option.value.visible);
@@ -79,13 +87,16 @@ export default defineComponent({
     };
 
     const handleSelectAnimation = (animationType: AnimationType) => {
-      // eslint-disable-next-line max-len
-      const target = animations.find((animation: AnimationType) => animation.prop === animationType.prop);
+      option.value.isExpanded = true;
+      const target = animations.find(
+        (animation: AnimationType) => animation.prop === animationType.prop,
+      );
       if (!target) {
         animations.push(animationType);
       } else {
-        // eslint-disable-next-line max-len
-        const index = animations.findIndex((animation: AnimationType) => animation.prop === target.prop);
+        const index = animations.findIndex(
+          (animation: AnimationType) => animation.prop === target.prop,
+        );
         animations.splice(index, 1);
       }
     };
@@ -126,6 +137,7 @@ export default defineComponent({
 
 <style scoped lang="less">
 .widget {
+  position: relative;
   width: 100%;
   font-size: 12px;
   border-bottom: 1px solid #efefef;
@@ -181,15 +193,43 @@ export default defineComponent({
     flex-flow: row nowrap;
     justify-content: flex-end;
     align-items: center;
+
+    svg:nth-of-type(2):hover + .widget__animations {
+      display: flex;
+    }
   }
 
   &__animations {
+    position: absolute;
+    display: none;
     flex: 1;
-    display: flex;
     flex-flow: row wrap;
     justify-content: space-evenly;
     align-items: center;
     height: 48px;
+    z-index: 1;
+    top: 32px;
+    background: white;
+    overflow: visible;
+    width: calc(100% - 13px);
+    box-shadow: 0 3px 1px -2px rgba(0,0,0,.2),
+    0 2px 2px 0 rgba(0,0,0,.14),
+    0 1px 5px 0 rgba(0,0,0,.12);
+
+    &:hover {
+      display: flex;
+    }
+
+    &:after {
+      position: absolute;
+      display: block;
+      content: '';
+      height: 32px;
+      width: 32px;
+      top: -32px;
+      right: -12px;
+      cursor: pointer;
+    }
 
     span, svg {
       color: rgba(0, 0, 0, .34);
@@ -210,7 +250,15 @@ export default defineComponent({
   }
 
   &__row {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: center;
     height: 32px;
+
+    p {
+      margin: 0;
+    }
   }
 }
 </style>

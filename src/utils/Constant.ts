@@ -5,7 +5,7 @@ export interface AnimationType {
   desc: string;
 }
 
-export const ANIMATIONTYPES: AnimationType[] = [
+export const ANIMATION_TYPES: AnimationType[] = [
   {
     title: 'width', icon: 'more-horizontal', prop: 'width', desc: '',
   },
