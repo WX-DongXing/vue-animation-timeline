@@ -151,6 +151,12 @@ export default defineComponent({
     };
 
     const handleLeft = ({ anchors }: AnimationType) => {
+      const maxAnchorTime = anchors[anchors.length - 1].time;
+      if (maxAnchorTime < time.value) {
+        emit('timeUpdate', maxAnchorTime);
+        return;
+      }
+
       for (const index in anchors) {
         if (anchors[index].time === time.value) {
           const preAnchor = anchors[+index - 1];
@@ -167,6 +173,11 @@ export default defineComponent({
     };
 
     const handleRight = ({ anchors }: AnimationType) => {
+      const maxAnchorTime = anchors[anchors.length - 1].time;
+      if (maxAnchorTime < time.value) {
+        return;
+      }
+
       for (const index in anchors) {
         if (anchors[index].time === time.value) {
           const nextAnchor = anchors[+index + 1];
