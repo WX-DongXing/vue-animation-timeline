@@ -150,13 +150,36 @@ export default defineComponent({
       animations.splice(index, 1);
     };
 
-    const handleLeft = ({ prop }: AnimationType) => {
-      console.log(prop);
+    const handleLeft = ({ anchors }: AnimationType) => {
+      for (const index in anchors) {
+        if (anchors[index].time === time.value) {
+          const preAnchor = anchors[+index - 1];
+          // eslint-disable-next-line no-unused-expressions
+          !!preAnchor && emit('timeUpdate', preAnchor.time);
+          break;
+        }
+
+        if (anchors[index].time > time.value) {
+          emit('timeUpdate', anchors[+index - 1].time);
+          break;
+        }
+      }
     };
 
     const handleRight = ({ anchors }: AnimationType) => {
-      console.log(anchors);
-      emit('timeUpdate', 1000);
+      for (const index in anchors) {
+        if (anchors[index].time === time.value) {
+          const nextAnchor = anchors[+index + 1];
+          // eslint-disable-next-line no-unused-expressions
+          !!nextAnchor && emit('timeUpdate', nextAnchor.time);
+          break;
+        }
+
+        if (anchors[index].time > time.value) {
+          emit('timeUpdate', anchors[index].time);
+          break;
+        }
+      }
     };
 
     const handleAnchor = ({ anchors, value }: AnimationType) => {
