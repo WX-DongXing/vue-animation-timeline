@@ -48,7 +48,31 @@
         v-for="animation in animations"
         :key="animation.prop"
       >
-        <p>{{ animation.prop }}</p>
+        <svg-icon icon-name="x" @click="handleRemove(animation)" />
+
+        <span class="widget__divider"></span>
+
+        <p>{{ animation.name }}: </p>
+
+        <input
+          type="text"
+          v-model.number="animation.value"
+          ref="input"
+        >
+
+        <div class="widget__control">
+          <svg-icon icon-name="chevron-left" @click="handleLeft(animation)" />
+
+          <span
+            :class="{
+              'widget__anchor': true,
+              'widget__anchor--active': isAnchorActive(animation.anchors),
+            }"
+            @click="handleAnchor(animation)"
+          ></span>
+
+          <svg-icon icon-name="chevron-right" @click="handleRight(animation)" />
+        </div>
       </div>
     </div>
   </div>
@@ -59,7 +83,7 @@ import {
   computed, ref,
   defineComponent, toRefs, reactive,
 } from 'vue-demi';
-import { ANIMATION_TYPES, AnimationType } from '@/utils/Constant.ts';
+import { Anchor, ANIMATION_TYPES, AnimationType } from '@/utils/Constant.ts';
 import SvgIcon from './SvgIcon.vue';
 
 export default defineComponent({
@@ -71,9 +95,13 @@ export default defineComponent({
       type: Object,
       default: () => ({}),
     },
+    time: {
+      type: Number,
+      default: 0,
+    },
   },
-  setup(props) {
-    const { option } = toRefs(props);
+  setup(props, { emit }) {
+    const { option, time } = toRefs(props);
     const animationTypes = reactive(ANIMATION_TYPES);
     const isShowAnimations = ref(false);
     const name = computed(() => option.value.name);
@@ -116,6 +144,34 @@ export default defineComponent({
       option.value.isExpanded = !option.value.isExpanded;
     };
 
+    const handleRemove = ({ prop }: AnimationType) => {
+      const index = animations.findIndex((animation: AnimationType) => animation.prop === prop);
+      animations[index].anchors = [];
+      animations.splice(index, 1);
+    };
+
+    const handleLeft = ({ prop }: AnimationType) => {
+      console.log(prop);
+    };
+
+    const handleRight = ({ anchors }: AnimationType) => {
+      console.log(anchors);
+      emit('timeUpdate', 1000);
+    };
+
+    const handleAnchor = ({ anchors, value }: AnimationType) => {
+      const index = anchors.findIndex((anchor: Anchor) => anchor.time === time.value);
+      if (index === -1) {
+        anchors.push({ time: time.value, value });
+        anchors.sort((anchorA: Anchor, anchorB: Anchor) => anchorA.time - anchorB.time);
+      } else {
+        anchors.splice(index, 1);
+      }
+    };
+
+    // eslint-disable-next-line max-len
+    const isAnchorActive = (anchors: Anchor[]) => anchors.some((anchor: Anchor) => anchor.time === time.value);
+
     return {
       name,
       visible,
@@ -130,6 +186,11 @@ export default defineComponent({
       handleExpanded,
       handleShowAnimations,
       handleSelectAnimation,
+      handleRemove,
+      handleLeft,
+      handleRight,
+      handleAnchor,
+      isAnchorActive,
     };
   },
 });
@@ -140,7 +201,7 @@ export default defineComponent({
   position: relative;
   width: 100%;
   font-size: 12px;
-  border-bottom: 1px solid #efefef;
+  border-bottom: 1px solid #f5f5f5;
   box-sizing: border-box;
   padding-right: 12px;
 
@@ -206,7 +267,6 @@ export default defineComponent({
     flex-flow: row wrap;
     justify-content: space-evenly;
     align-items: center;
-    height: 48px;
     z-index: 1;
     top: 32px;
     background: white;
@@ -235,9 +295,15 @@ export default defineComponent({
       color: rgba(0, 0, 0, .34);
     }
 
-    span + span {
-      margin: 4px;
-      color: rgba(0, 0, 0, .34);
+    span {
+      flex: none;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: center;
+      align-items: center;
+      width: 22px;
+      height: 22px;
+      margin: 2px;
     }
 
     &--active {
@@ -255,9 +321,59 @@ export default defineComponent({
     justify-content: flex-start;
     align-items: center;
     height: 32px;
+    border-top: 1px solid #F5F5F5;
+
+    svg {
+      cursor: pointer;
+      color: rgba(0, 0, 0, .56);
+
+      &:hover {
+        color: rgba(0, 0, 0, 1);
+      }
+    }
 
     p {
-      margin: 0;
+      flex: none;
+      font-size: 12px;
+      width: 56px;
+      text-align: right;
+    }
+
+    input {
+      flex: none;
+      width: 60px;
+      border: none;
+      outline: none;
+      font-size: 12px;
+      //cursor: ew-resize;
+      border-top: 1px solid transparent;
+      border-bottom: 1px solid rgba(0, 0, 0, .12);
+      margin: 0 12px;
+      background: transparent;
+    }
+  }
+
+  &__control {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__anchor {
+    width: 5px;
+    height: 5px;
+    border: 1px solid rgba(0, 0, 0, .56);
+    transform: rotate(45deg);
+    cursor: pointer;
+
+    &:hover {
+      border: 1px solid rgba(0, 0, 0, 1);
+    }
+
+    &--active {
+      background: black;
     }
   }
 }

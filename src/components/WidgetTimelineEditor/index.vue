@@ -44,9 +44,11 @@
 
         <div class="widget-timeline-editor__widgets">
           <widget
+            :time="time"
             v-for="(option, index) in options"
             :option="option"
             :key="index"
+            @timeUpdate="handleTimeUpdate"
           />
         </div>
       </div>
@@ -183,6 +185,10 @@ export default defineComponent({
 
     const handleRepeat = () => {
       isRepeat.value = !isRepeat.value;
+    };
+
+    const handleTimeUpdate = (t) => {
+      time.value = t;
     };
 
     const onLeftPointMouseDown = () => {
@@ -563,6 +569,7 @@ export default defineComponent({
       handleReset,
       handleBack,
       handleRepeat,
+      handleTimeUpdate,
     };
   },
 });
