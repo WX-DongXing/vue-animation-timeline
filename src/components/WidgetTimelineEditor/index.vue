@@ -82,6 +82,11 @@ const DEFAULT_OPTION = {
   visible: true,
   isLocked: false,
 };
+const ANIMATION_OPTIONS = {
+  delay: 0,
+  duration: 50,
+  easing: 'easeLinear',
+};
 
 export default defineComponent({
   components: {
@@ -128,11 +133,6 @@ export default defineComponent({
       offset: 0,
     });
 
-    const animateOptions = {
-      delay: 0,
-      duration: 50,
-      easing: 'easeLinear',
-    };
     let allowLeftMove = false;
     let allowRightMove = false;
     let allowCenterMove = false;
@@ -402,7 +402,7 @@ export default defineComponent({
         y1: 48,
         x2: width - 10,
         y2: 48,
-      }, animateOptions);
+      }, ANIMATION_OPTIONS);
     };
 
     const resizeScaleBar = () => {
@@ -414,18 +414,18 @@ export default defineComponent({
       // set left point x position
       leftPoint.animate({
         x: record.leftPosition,
-      }, animateOptions);
+      }, ANIMATION_OPTIONS);
 
       // set right point x position
       rightPoint.animate({
         x: record.rightPosition,
-      }, animateOptions);
+      }, ANIMATION_OPTIONS);
 
       // set center bar width, x
       centerBar.animate({
         width: record.rightPosition - record.leftPosition,
         x: record.leftPosition,
-      }, animateOptions);
+      }, ANIMATION_OPTIONS);
     };
 
     const resizePlayBar = () => {
@@ -433,7 +433,7 @@ export default defineComponent({
       // set play bar triangle x
       playBarTriangle.animate({
         x: ((width - 20) / maxTime.value) * time.value / scaleRate.value + 10 - record.offset,
-      }, animateOptions);
+      }, ANIMATION_OPTIONS);
 
       // set play bar line x
       playBarLine.animate({
@@ -441,7 +441,7 @@ export default defineComponent({
         y1: 30,
         x2: ((width - 20) / maxTime.value) * time.value / scaleRate.value + 10 - record.offset,
         y2: height,
-      }, animateOptions);
+      }, ANIMATION_OPTIONS);
     };
 
     const calcEffect = () => {

@@ -32,4 +32,21 @@ export default class App extends Vue {}
   box-sizing: border-box;
   padding: 32px;
 }
+
+::-webkit-scrollbar {
+  background-color: white;
+  width: 6px;
+  height: 6px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-button {
+  height: 0;
+  width: 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #b9b9bd;
+  border-radius: 3px;
+}
 </style>
