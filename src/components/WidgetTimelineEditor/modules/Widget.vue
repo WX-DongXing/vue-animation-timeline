@@ -107,13 +107,14 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const { option, time } = toRefs(props);
-    const animationTypes = reactive(ANIMATION_TYPES);
+    const animationTypes = reactive(JSON.parse(JSON.stringify(ANIMATION_TYPES)));
     const isShowAnimations = ref(false);
     const name = computed(() => option.value.name);
     const visible = computed(() => option.value.visible);
     const isExpanded = computed(() => option.value.isExpanded);
     const isLocked = computed(() => option.value.isLocked);
     const animations = reactive<AnimationType | any>(option.value.animations || []);
+    option.value.animations = animations;
 
     const handleShowAnimations = () => {
       isShowAnimations.value = !isShowAnimations.value;
