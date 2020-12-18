@@ -1,6 +1,7 @@
 export interface Anchor {
   time: number;
   value: number;
+  curve?: string;
 }
 
 export interface AnimationType {

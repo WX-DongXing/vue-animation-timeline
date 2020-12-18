@@ -612,7 +612,7 @@ export default defineComponent({
     display: flex;
     flex-flow: column nowrap;
     justify-content: flex-start;
-    width: 240px;
+    width: 250px;
     height: 100%;
     border-right: 1px solid #efefef;
   }
@@ -652,7 +652,7 @@ export default defineComponent({
 
   &__right {
     float: right;
-    width: calc(100% - 241px);
+    width: calc(100% - 251px);
     height: 100%;
   }
 

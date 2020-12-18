@@ -25,7 +25,6 @@
       <span @click="handleExpanded">{{ name }}</span>
 
       <div class="widget__suffix">
-        <svg-icon icon-name="activity" />
         <svg-icon icon-name="layers" @click="handleShowAnimations"/>
 
         <div class="widget__animations">
@@ -59,6 +58,12 @@
           v-model.number="animation.value"
           ref="input"
         >
+
+        <svg-icon
+          :class="{'widget__icon--active': animation.curve && isAnchorActive(animation.anchors)}"
+          icon-name="activity"
+          @click="handleCurve"
+        />
 
         <div class="widget__control">
           <svg-icon icon-name="chevron-left" @click="handleLeft(animation)" />
@@ -150,7 +155,12 @@ export default defineComponent({
       animations.splice(index, 1);
     };
 
+    const handleCurve = ({ prop }: AnimationType) => {
+      console.log(prop);
+    };
+
     const handleLeft = ({ anchors }: AnimationType) => {
+      if (anchors.length === 0) return;
       const maxAnchorTime = anchors[anchors.length - 1].time;
       if (maxAnchorTime < time.value) {
         emit('timeUpdate', maxAnchorTime);
@@ -173,6 +183,7 @@ export default defineComponent({
     };
 
     const handleRight = ({ anchors }: AnimationType) => {
+      if (anchors.length === 0) return;
       const maxAnchorTime = anchors[anchors.length - 1].time;
       if (maxAnchorTime < time.value) {
         return;
@@ -221,6 +232,7 @@ export default defineComponent({
       handleShowAnimations,
       handleSelectAnimation,
       handleRemove,
+      handleCurve,
       handleLeft,
       handleRight,
       handleAnchor,
@@ -289,7 +301,7 @@ export default defineComponent({
     justify-content: flex-end;
     align-items: center;
 
-    svg:nth-of-type(2):hover + .widget__animations {
+    svg:nth-of-type(1):hover + .widget__animations {
       display: flex;
     }
   }
@@ -375,7 +387,7 @@ export default defineComponent({
 
     input {
       flex: none;
-      width: 60px;
+      width: 40px;
       border: none;
       outline: none;
       font-size: 12px;
@@ -393,6 +405,7 @@ export default defineComponent({
     justify-content: space-around;
     align-items: center;
     width: 100%;
+    margin-left: 6px;
   }
 
   &__anchor {
@@ -405,6 +418,13 @@ export default defineComponent({
     &:hover {
       border: 1px solid rgba(0, 0, 0, 1);
     }
+
+    &--active {
+      background: black;
+    }
+  }
+
+  &__icon {
 
     &--active {
       background: black;
