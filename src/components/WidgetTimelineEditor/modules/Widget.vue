@@ -126,13 +126,14 @@ export default defineComponent({
         (animation: AnimationType) => animation.prop === animationType.prop,
       );
       if (!target) {
-        animations.push(animationType);
+        animations.push(reactive(animationType));
       } else {
         const index = animations.findIndex(
           (animation: AnimationType) => animation.prop === target.prop,
         );
         animations.splice(index, 1);
       }
+      emit('update');
     };
 
     // eslint-disable-next-line max-len
@@ -140,20 +141,24 @@ export default defineComponent({
 
     const handleVisible = () => {
       option.value.visible = !option.value.visible;
+      emit('update');
     };
 
     const handleLocked = () => {
       option.value.isLocked = !option.value.isLocked;
+      emit('update');
     };
 
     const handleExpanded = () => {
       option.value.isExpanded = !option.value.isExpanded;
+      emit('update');
     };
 
     const handleRemove = ({ prop }: AnimationType) => {
       const index = animations.findIndex((animation: AnimationType) => animation.prop === prop);
       animations[index].anchors = [];
       animations.splice(index, 1);
+      emit('update');
     };
 
     const handleCurve = ({ prop }: AnimationType) => {
@@ -213,6 +218,7 @@ export default defineComponent({
       } else {
         anchors.splice(index, 1);
       }
+      emit('update');
     };
 
     // eslint-disable-next-line max-len

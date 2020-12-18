@@ -42,13 +42,14 @@
           </div>
         </div>
 
-        <div class="widget-timeline-editor__widgets">
+        <div class="widget-timeline-editor__widgets" ref="container">
           <widget
             :time="time"
             v-for="(option, index) in options"
             :option="option"
             :key="index"
             @timeUpdate="handleTimeUpdate"
+            @update="handleUpdate"
           />
         </div>
       </div>
@@ -125,6 +126,7 @@ export default defineComponent({
     const axisTicks = ref([]);
     const isPlay = ref(false);
     const isRepeat = ref(false);
+    const container = ref();
 
     const record = reactive({
       leftPosition: 0,
@@ -189,6 +191,10 @@ export default defineComponent({
 
     const handleTimeUpdate = (t) => {
       time.value = t;
+    };
+
+    const handleUpdate = () => {
+      console.log('update');
     };
 
     const onLeftPointMouseDown = () => {
@@ -263,6 +269,10 @@ export default defineComponent({
       allowPlayBarMove = false;
     };
 
+    const onContainerScroll = (event) => {
+      console.log(event);
+    };
+
     const addEvents = () => {
       leftPoint.on('mousedown', onLeftPointMouseDown);
       rightPoint.on('mousedown', onRightPointMouseDown);
@@ -271,6 +281,7 @@ export default defineComponent({
       playBarLine.on('mousedown', onAllowPlayBarMove);
       timelineRect.on('mousedown', onAllowPlayBarMove);
       painter.on('mousemove', onPainterMouseMove);
+      container.value.addEventListener('scroll', onContainerScroll);
       document.addEventListener('mouseup', onStopMoving);
     };
 
@@ -282,6 +293,7 @@ export default defineComponent({
       playBarLine.off('mousedown', onAllowPlayBarMove);
       timelineRect.off('mousedown', onAllowPlayBarMove);
       painter.off('mousemove', onPainterMouseMove);
+      container.value.removeEventListener('scroll', onContainerScroll);
       document.removeEventListener('mouseup', onStopMoving);
     };
 
@@ -564,12 +576,14 @@ export default defineComponent({
       calcMaxTime,
       isPlay,
       isRepeat,
+      container,
       options,
       handlePlay,
       handleReset,
       handleBack,
       handleRepeat,
       handleTimeUpdate,
+      handleUpdate,
     };
   },
 });
