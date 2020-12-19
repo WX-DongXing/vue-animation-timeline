@@ -175,6 +175,7 @@ export default defineComponent({
         const anchor: Anchor = anchors[index];
         anchors.splice(index, 1, { ...anchor, value: +target.value });
       }
+      emit('update');
     };
 
     const handleLeft = ({ anchors }: AnimationType) => {
@@ -272,7 +273,6 @@ export default defineComponent({
   font-size: 12px;
   border-bottom: 1px solid #f5f5f5;
   box-sizing: border-box;
-  padding-right: 12px;
 
   &__header {
     display: flex;
@@ -280,6 +280,7 @@ export default defineComponent({
     justify-content: flex-start;
     align-items: center;
     height: 32px;
+    padding: 0 12px;
   }
 
   svg {
@@ -340,7 +341,7 @@ export default defineComponent({
     top: 32px;
     background: white;
     overflow: visible;
-    width: calc(100% - 13px);
+    width: calc(100% - 24px);
     box-shadow: 0 3px 1px -2px rgba(0,0,0,.2),
     0 2px 2px 0 rgba(0,0,0,.14),
     0 1px 5px 0 rgba(0,0,0,.12);
@@ -354,7 +355,7 @@ export default defineComponent({
       display: block;
       content: '';
       height: 32px;
-      width: 32px;
+      width: 40px;
       top: -32px;
       right: -12px;
       cursor: pointer;
@@ -385,12 +386,16 @@ export default defineComponent({
   }
 
   &__row {
+    flex: none;
     display: flex;
     flex-flow: row nowrap;
     justify-content: flex-start;
     align-items: center;
     height: 32px;
-    border-top: 1px solid #F5F5F5;
+    box-sizing: border-box;
+    padding: 0 12px;
+    background: whitesmoke;
+    border-bottom: 1px solid #fafafa;
 
     svg {
       cursor: pointer;

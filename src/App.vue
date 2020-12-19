@@ -15,11 +15,11 @@ import WidgetTimelineEditor from '@/components/WidgetTimelineEditor/index.vue';
   data() {
     return {
       widgets: [
-        { key: 1, name: '明细表', animations: [] },
-        { key: 2, name: '聚合表', animations: [] },
-        { key: 3, name: '透视表', animations: [] },
-        { key: 4, name: '指标卡', animations: [] },
-        { key: 5, name: '词云图', animations: [] },
+        { key: 1, name: '明细表' },
+        { key: 2, name: '聚合表' },
+        { key: 3, name: '透视表' },
+        { key: 4, name: '指标卡' },
+        { key: 5, name: '词云图' },
       ],
     };
   },

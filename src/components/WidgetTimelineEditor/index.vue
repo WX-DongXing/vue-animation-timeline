@@ -17,7 +17,7 @@
 
       <div class="widget-timeline-editor__title">
         <span>{{ timeScale }}</span>
-        <input type="text" v-model.trim="maxTimeScale">
+        <span>{{ maxTimeScale }}</span>
       </div>
       <!-- / timescale area -->
 
@@ -28,6 +28,10 @@
     <section class="widget-timeline-editor__content">
       <div class="widget-timeline-editor__left">
         <div class="widget-timeline-editor__menu">
+          <div class="widget-timeline-editor__max">
+            <span>总时长：</span>
+            <input type="text" v-model.trim="maxTimeScale">
+          </div>
 
           <div class="widget-timeline-editor__sign">
             <div>
@@ -106,7 +110,7 @@ export default defineComponent({
     const { widgets } = toRefs(props);
     const { rect } = useResize();
     const options = reactive(
-      [...widgets.value].map((widget) => reactive({ ...widget, ...DEFAULT_OPTION })),
+      [...widgets.value].map((widget) => reactive({ ...widget, ...DEFAULT_OPTION, animations: [] })),
     );
     const time = ref(0);
     const startTime = ref(0);
@@ -124,6 +128,7 @@ export default defineComponent({
     let playBarLine = ref();
     let timelineAxis = ref();
     const axisTicks = ref([]);
+    const axisAnchors = ref([]);
     const isPlay = ref(false);
     const isRepeat = ref(false);
     const container = ref();
@@ -191,10 +196,6 @@ export default defineComponent({
 
     const handleTimeUpdate = (t) => {
       time.value = t;
-    };
-
-    const handleUpdate = () => {
-      console.log('update', widgets.value);
     };
 
     const onLeftPointMouseDown = () => {
@@ -528,10 +529,106 @@ export default defineComponent({
 
         axisTicks.value.push(...[axisTick, axisText, ...smallAxisTick]);
       }
+    };
 
-      // set play bar to front
+    // set play bar to front
+    const setPlayBarToFront = () => {
       playBarTriangle.toFront();
       playBarLine.toFront();
+    };
+
+    const drawAnchors = () => {
+      axisAnchors.value.forEach((anchor) => {
+        anchor.remove(true);
+      });
+      axisAnchors.value = [];
+
+      const { width } = rect;
+
+      const reduceList = options.reduce((acc, cur, index, array) => {
+        const pre = array[index - 1];
+        if (!pre) {
+          acc.totalList.push(0);
+        } else {
+          acc.total += (pre.isExpanded ? pre.animations.length : 0);
+          acc.totalList.push(acc.total);
+        }
+        return acc;
+      }, { totalList: [], total: 0 });
+
+      options.forEach(({ isExpanded, animations }, i) => {
+        const { totalList } = reduceList;
+        const anchorRect = painter.addShape('rect', {
+          name: 'anchorRect',
+          attrs: {
+            x: 0,
+            y: (57 + i * 33) + (totalList[i] * 33),
+            width,
+            height: 32,
+            fill: 'white',
+          },
+        });
+        const anchorRectLine = painter.addShape('line', {
+          name: 'anchorRectLine',
+          attrs: {
+            x1: 0,
+            y1: (56.5 + (i + 1) * 33) + (totalList[i] * 33),
+            x2: width,
+            y2: (56.5 + (i + 1) * 33) + (totalList[i] * 33),
+            stroke: '#f5f5f5',
+            lineWidth: 1,
+          },
+        });
+        const insideList = [];
+        const anchors = [];
+        if (isExpanded && animations.length > 0) {
+          animations.forEach((animation, j) => {
+            const insideRect = painter.addShape('rect', {
+              name: 'insideAnchorRect',
+              attrs: {
+                x: 0,
+                y: (57 + i * 33 + 32) + (totalList[i] * 32) + (j * 32),
+                width,
+                height: 31,
+                fill: 'whitesmoke',
+              },
+            });
+            const insideRectLine = painter.addShape('line', {
+              name: 'insideAnchorRectLine',
+              attrs: {
+                x1: 0,
+                y1: (56.5 + i * 33 + 32 * 2) + (totalList[i] * 32) + (j * 32),
+                x2: width,
+                y2: (56.5 + i * 33 + 32 * 2) + (totalList[i] * 32) + (j * 32),
+                stroke: '#fafafa',
+                lineWidth: 1,
+              },
+            });
+            animation.anchors.forEach((anchor) => {
+              const insideAnchorMarker = painter.addShape('marker', {
+                name: 'anchor',
+                attrs: {
+                  x: ((width - 20) / maxTime.value) * anchor.time / scaleRate.value + 10 - record.offset,
+                  y: (56.5 + i * 33 + 32) + (totalList[i] * 32) + (j * 32) + (16),
+                  r: 5,
+                  fill: 'black',
+                  lineWidth: 0,
+                  cursor: 'move',
+                  symbol: 'diamond',
+                },
+              });
+              anchors.push(insideAnchorMarker);
+            });
+            insideList.push(...[insideRect, insideRectLine, ...anchors]);
+          });
+        }
+        axisAnchors.value.push(...[anchorRect, anchorRectLine, ...insideList]);
+      });
+    };
+
+    const handleUpdate = () => {
+      drawAnchors();
+      setPlayBarToFront();
     };
 
     throttledWatch(rect, () => {
@@ -540,6 +637,8 @@ export default defineComponent({
       resizeScaleBar();
       resizePlayBar();
       drawTick();
+      drawAnchors();
+      setPlayBarToFront();
     }, { throttle: 16 });
 
     throttledWatch([startTime, endTime, maxTime], () => {
@@ -547,6 +646,8 @@ export default defineComponent({
       resizeScaleBar();
       resizePlayBar();
       drawTick();
+      drawAnchors();
+      setPlayBarToFront();
     }, { throttle: 16 });
 
     throttledWatch(time, () => {
@@ -608,16 +709,12 @@ export default defineComponent({
     padding: 0 12px;
   }
 
-  section {
-    box-sizing: border-box;
-    padding: 0 12px 12px;
-    height: 500px;
-  }
-
   &__content {
-    height: 100%;
+    height: 500px;
     border-top: 1px solid #efefef;
     overflow: hidden;
+    box-sizing: border-box;
+    padding: 0 12px 12px 0;
   }
 
   &__left {
@@ -631,11 +728,30 @@ export default defineComponent({
   }
 
   &__menu {
-    display: flex;
-    flex-flow: column nowrap;
-    justify-content: flex-end;
     height: 56px;
     border-bottom: 1px solid #efefef;
+  }
+
+  &__max {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: center;
+    height: 32px;
+    box-sizing: border-box;
+    padding: 0 12px;
+
+    span {
+      font-size: 12px;
+    }
+
+    input {
+      width: 78px;
+      outline: none;
+      border-radius: 4px;
+      padding-left: 6px;
+      border: 1px solid #cccccc;
+    }
   }
 
   &__sign {
@@ -646,7 +762,7 @@ export default defineComponent({
     width: 100%;
     height: 24px;
     box-sizing: border-box;
-    padding-right: 12px;
+    padding: 0 12px;
 
     svg {
       font-size: 12px;
@@ -714,14 +830,6 @@ export default defineComponent({
     height: 100%;
     box-sizing: border-box;
     padding: 0 0 0 4px;
-
-    input {
-      width: 78px;
-      border: 1px solid #cccccc;
-      outline: none;
-      border-radius: 4px;
-      padding-left: 6px;
-    }
   }
 
   #painter {
