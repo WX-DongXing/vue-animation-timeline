@@ -194,7 +194,7 @@ export default defineComponent({
     };
 
     const handleUpdate = () => {
-      console.log('update');
+      console.log('update', widgets.value);
     };
 
     const onLeftPointMouseDown = () => {
@@ -479,7 +479,6 @@ export default defineComponent({
         const min = unitSecondLength.value / scaleRate.value <= TICK_MIN_LENGTH;
         const max = unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH;
         const minCount = Math.trunc(TICK_MIN_LENGTH / (unitSecondLength.value / scaleRate.value));
-        // eslint-disable-next-line max-len
         if (min && minCount > 0 && index % (minCount * 2) !== 0 && +index !== +unitTickCount.value) {
           continue;
         }

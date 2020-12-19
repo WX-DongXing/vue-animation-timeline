@@ -18,6 +18,7 @@ module.exports = {
     'no-restricted-syntax': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-mixed-operators': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-loop-func': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'max-len': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'guard-for-in': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'import/extensions': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/no-var-requires': process.env.NODE_ENV === 'production' ? 'warn' : 'off',

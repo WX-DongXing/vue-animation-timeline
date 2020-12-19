@@ -57,6 +57,7 @@
           type="text"
           v-model.number="animation.value"
           ref="input"
+          @input="(event) => handleInput(event, animation)"
         >
 
         <svg-icon
@@ -113,8 +114,12 @@ export default defineComponent({
     const visible = computed(() => option.value.visible);
     const isExpanded = computed(() => option.value.isExpanded);
     const isLocked = computed(() => option.value.isLocked);
-    const animations = reactive<AnimationType | any>(option.value.animations || []);
-    option.value.animations = animations;
+    const animations = computed({
+      get: () => option.value.animations || [],
+      set: (val: AnimationType[]) => {
+        option.value.animations = val;
+      },
+    });
 
     const handleShowAnimations = () => {
       isShowAnimations.value = !isShowAnimations.value;
@@ -122,22 +127,21 @@ export default defineComponent({
 
     const handleSelectAnimation = (animationType: AnimationType) => {
       option.value.isExpanded = true;
-      const target = animations.find(
+      const target = animations.value.find(
         (animation: AnimationType) => animation.prop === animationType.prop,
       );
       if (!target) {
-        animations.push(reactive(animationType));
+        animations.value.push(reactive(animationType));
       } else {
-        const index = animations.findIndex(
+        const index = animations.value.findIndex(
           (animation: AnimationType) => animation.prop === target.prop,
         );
-        animations.splice(index, 1);
+        animations.value.splice(index, 1);
       }
       emit('update');
     };
 
-    // eslint-disable-next-line max-len
-    const isActive = (prop: string) => animations.find((animation: AnimationType) => animation.prop === prop);
+    const isActive = (prop: string) => animations.value.find((animation: AnimationType) => animation.prop === prop);
 
     const handleVisible = () => {
       option.value.visible = !option.value.visible;
@@ -155,9 +159,9 @@ export default defineComponent({
     };
 
     const handleRemove = ({ prop }: AnimationType) => {
-      const index = animations.findIndex((animation: AnimationType) => animation.prop === prop);
-      animations[index].anchors = [];
-      animations.splice(index, 1);
+      const index = animations.value.findIndex((animation: AnimationType) => animation.prop === prop);
+      animations.value[index].anchors = [];
+      animations.value.splice(index, 1);
       emit('update');
     };
 
@@ -165,8 +169,20 @@ export default defineComponent({
       console.log(prop);
     };
 
+    const handleInput = ({ target }: any, { anchors }: AnimationType) => {
+      const index = anchors.findIndex((anchor: Anchor) => anchor.time === time.value);
+      if (index !== -1) {
+        const anchor: Anchor = anchors[index];
+        anchors.splice(index, 1, { ...anchor, value: +target.value });
+      }
+    };
+
     const handleLeft = ({ anchors }: AnimationType) => {
       if (anchors.length === 0) return;
+      const minAnchorTime = anchors[0].time;
+      if (minAnchorTime > time.value) {
+        return;
+      }
       const maxAnchorTime = anchors[anchors.length - 1].time;
       if (maxAnchorTime < time.value) {
         emit('timeUpdate', maxAnchorTime);
@@ -221,7 +237,6 @@ export default defineComponent({
       emit('update');
     };
 
-    // eslint-disable-next-line max-len
     const isAnchorActive = (anchors: Anchor[]) => anchors.some((anchor: Anchor) => anchor.time === time.value);
 
     return {
@@ -240,6 +255,7 @@ export default defineComponent({
       handleSelectAnimation,
       handleRemove,
       handleCurve,
+      handleInput,
       handleLeft,
       handleRight,
       handleAnchor,
