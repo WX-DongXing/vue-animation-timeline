@@ -127,8 +127,8 @@ export default defineComponent({
     let playBarTriangle = ref();
     let playBarLine = ref();
     let timelineAxis = ref();
+    let timelineGroup = ref();
     const axisTicks = ref([]);
-    const axisAnchors = ref([]);
     const isPlay = ref(false);
     const isRepeat = ref(false);
     const container = ref();
@@ -140,6 +140,7 @@ export default defineComponent({
       endTime: 0,
       rightPosition: 0,
       offset: 0,
+      scroll: 0,
     });
 
     let allowLeftMove = false;
@@ -173,131 +174,6 @@ export default defineComponent({
       },
     });
 
-    const handlePlay = () => {
-      isPlay.value = !isPlay.value;
-    };
-
-    const handleReset = () => {
-      isPlay.value = false;
-      time.value = 0;
-      setTimeout(() => {
-        isPlay.value = true;
-      });
-    };
-
-    const handleBack = () => {
-      isPlay.value = false;
-      time.value = 0;
-    };
-
-    const handleRepeat = () => {
-      isRepeat.value = !isRepeat.value;
-    };
-
-    const handleTimeUpdate = (t) => {
-      time.value = t;
-    };
-
-    const onLeftPointMouseDown = () => {
-      allowLeftMove = true;
-      record.startTime = startTime.value;
-    };
-
-    const onRightPointMouseDown = () => {
-      allowRightMove = true;
-      record.endTime = endTime.value;
-    };
-
-    const onCenterBarMouseDown = ({ x }) => {
-      allowCenterMove = true;
-      record.startTime = startTime.value;
-      record.centerAnchor = x;
-      record.endTime = endTime.value;
-    };
-
-    const onAllowPlayBarMove = () => {
-      allowPlayBarMove = true;
-    };
-
-    const onPainterMouseMove = ({ x }) => {
-      // left point moving
-      if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
-        const rate = (x - 10) / (rect.width - 20);
-        startTime.value = maxTime.value * rate;
-      }
-
-      // right point moving
-      if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
-        const rate = (x - 10) / (rect.width - 20);
-        endTime.value = maxTime.value * rate;
-      }
-
-      // center rect moving
-      if (
-        allowCenterMove
-        && record.leftPosition >= 10
-        && Math.floor(record.rightPosition) <= Math.floor(rect.width - 10)
-      ) {
-        const distanceDiff = x - record.centerAnchor;
-        const timeDiff = (distanceDiff / (rect.width - 20)) * maxTime.value;
-        if (record.startTime + timeDiff <= 0) {
-          startTime.value = 0;
-          endTime.value = record.endTime - record.startTime;
-          return false;
-        }
-        if (record.endTime + timeDiff >= maxTime.value) {
-          startTime.value = maxTime.value - (record.endTime - record.startTime);
-          endTime.value = maxTime.value;
-          return false;
-        }
-        startTime.value = record.startTime + timeDiff;
-        endTime.value = record.endTime + timeDiff;
-      }
-
-      // play bar moving
-      if (allowPlayBarMove && x >= 10 && x <= rect.width - 10) {
-        const rate = maxTime.value / ((rect.width - 20) / scaleRate.value);
-        const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
-        time.value = rate * (x - 10) + timeBuffer;
-      }
-      return false;
-    };
-
-    const onStopMoving = () => {
-      allowLeftMove = false;
-      allowRightMove = false;
-      allowCenterMove = false;
-      allowPlayBarMove = false;
-    };
-
-    const onContainerScroll = (event) => {
-      console.log(event);
-    };
-
-    const addEvents = () => {
-      leftPoint.on('mousedown', onLeftPointMouseDown);
-      rightPoint.on('mousedown', onRightPointMouseDown);
-      centerBar.on('mousedown', onCenterBarMouseDown);
-      playBarTriangle.on('mousedown', onAllowPlayBarMove);
-      playBarLine.on('mousedown', onAllowPlayBarMove);
-      timelineRect.on('mousedown', onAllowPlayBarMove);
-      painter.on('mousemove', onPainterMouseMove);
-      container.value.addEventListener('scroll', onContainerScroll);
-      document.addEventListener('mouseup', onStopMoving);
-    };
-
-    const removeEvents = () => {
-      leftPoint.off('mousedown', onLeftPointMouseDown);
-      rightPoint.off('mousedown', onRightPointMouseDown);
-      centerBar.off('mousedown', onCenterBarMouseDown);
-      playBarTriangle.off('mousedown', onAllowPlayBarMove);
-      playBarLine.off('mousedown', onAllowPlayBarMove);
-      timelineRect.off('mousedown', onAllowPlayBarMove);
-      painter.off('mousemove', onPainterMouseMove);
-      container.value.removeEventListener('scroll', onContainerScroll);
-      document.removeEventListener('mouseup', onStopMoving);
-    };
-
     const initCanvas = () => {
       const { width, height } = document.getElementById('painter').getBoundingClientRect();
       // init painter
@@ -306,6 +182,8 @@ export default defineComponent({
         width,
         height,
       });
+
+      timelineGroup = painter.addGroup();
 
       timeRect = painter.addShape('rect', {
         name: 'timeBar',
@@ -538,13 +416,9 @@ export default defineComponent({
     };
 
     const drawAnchors = () => {
-      axisAnchors.value.forEach((anchor) => {
-        anchor.remove(true);
-      });
-      axisAnchors.value = [];
-
+      // clear timeline group all children
+      timelineGroup.clear();
       const { width } = rect;
-
       const reduceList = options.reduce((acc, cur, index, array) => {
         const pre = array[index - 1];
         if (!pre) {
@@ -558,58 +432,57 @@ export default defineComponent({
 
       options.forEach(({ isExpanded, animations }, i) => {
         const { totalList } = reduceList;
-        const anchorRect = painter.addShape('rect', {
+        timelineGroup.addShape('rect', {
           name: 'anchorRect',
           attrs: {
             x: 0,
-            y: (57 + i * 33) + (totalList[i] * 33),
+            y: (57 + i * 33) + (totalList[i] * 33) - record.scroll,
             width,
             height: 32,
             fill: 'white',
           },
         });
-        const anchorRectLine = painter.addShape('line', {
+        timelineGroup.addShape('line', {
           name: 'anchorRectLine',
           attrs: {
             x1: 0,
-            y1: (56.5 + (i + 1) * 33) + (totalList[i] * 33),
+            y1: (56.5 + (i + 1) * 33) + (totalList[i] * 33) - record.scroll,
             x2: width,
-            y2: (56.5 + (i + 1) * 33) + (totalList[i] * 33),
+            y2: (56.5 + (i + 1) * 33) + (totalList[i] * 33) - record.scroll,
             stroke: '#f5f5f5',
             lineWidth: 1,
           },
         });
-        const insideList = [];
-        const anchors = [];
         if (isExpanded && animations.length > 0) {
           animations.forEach((animation, j) => {
-            const insideRect = painter.addShape('rect', {
+            timelineGroup.addShape('rect', {
               name: 'insideAnchorRect',
               attrs: {
                 x: 0,
-                y: (57 + i * 33 + 32) + (totalList[i] * 32) + (j * 32),
+                y: (57 + i * 33 + 32) + (totalList[i] * 32) + (j * 32) - record.scroll,
                 width,
                 height: 31,
                 fill: 'whitesmoke',
               },
             });
-            const insideRectLine = painter.addShape('line', {
+            timelineGroup.addShape('line', {
               name: 'insideAnchorRectLine',
               attrs: {
                 x1: 0,
-                y1: (56.5 + i * 33 + 32 * 2) + (totalList[i] * 32) + (j * 32),
+                y1: (56.5 + i * 33 + 32 * 2) + (totalList[i] * 32) + (j * 32) - record.scroll,
                 x2: width,
-                y2: (56.5 + i * 33 + 32 * 2) + (totalList[i] * 32) + (j * 32),
+                y2: (56.5 + i * 33 + 32 * 2) + (totalList[i] * 32) + (j * 32) - record.scroll,
                 stroke: '#fafafa',
                 lineWidth: 1,
               },
             });
             animation.anchors.forEach((anchor) => {
-              const insideAnchorMarker = painter.addShape('marker', {
+              timelineGroup.addShape('marker', {
                 name: 'anchor',
+                id: 'hi-anchor',
                 attrs: {
                   x: ((width - 20) / maxTime.value) * anchor.time / scaleRate.value + 10 - record.offset,
-                  y: (56.5 + i * 33 + 32) + (totalList[i] * 32) + (j * 32) + (16),
+                  y: (56.5 + i * 33 + 32) + (totalList[i] * 32) + (j * 32) + (16) - record.scroll,
                   r: 5,
                   fill: 'black',
                   lineWidth: 0,
@@ -617,18 +490,148 @@ export default defineComponent({
                   symbol: 'diamond',
                 },
               });
-              anchors.push(insideAnchorMarker);
             });
-            insideList.push(...[insideRect, insideRectLine, ...anchors]);
           });
         }
-        axisAnchors.value.push(...[anchorRect, anchorRectLine, ...insideList]);
       });
+    };
+
+    const handlePlay = () => {
+      isPlay.value = !isPlay.value;
+    };
+
+    const handleReset = () => {
+      isPlay.value = false;
+      time.value = 0;
+      setTimeout(() => {
+        isPlay.value = true;
+      });
+    };
+
+    const handleBack = () => {
+      isPlay.value = false;
+      time.value = 0;
+    };
+
+    const handleRepeat = () => {
+      isRepeat.value = !isRepeat.value;
+    };
+
+    const handleTimeUpdate = (t) => {
+      time.value = t;
     };
 
     const handleUpdate = () => {
       drawAnchors();
       setPlayBarToFront();
+    };
+
+    const onLeftPointMouseDown = () => {
+      allowLeftMove = true;
+      record.startTime = startTime.value;
+    };
+
+    const onRightPointMouseDown = () => {
+      allowRightMove = true;
+      record.endTime = endTime.value;
+    };
+
+    const onCenterBarMouseDown = ({ x }) => {
+      allowCenterMove = true;
+      record.startTime = startTime.value;
+      record.centerAnchor = x;
+      record.endTime = endTime.value;
+    };
+
+    const onAllowPlayBarMove = () => {
+      allowPlayBarMove = true;
+    };
+
+    const onPainterMouseMove = ({ x }) => {
+      // left point moving
+      if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
+        const rate = (x - 10) / (rect.width - 20);
+        startTime.value = maxTime.value * rate;
+      }
+
+      // right point moving
+      if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
+        const rate = (x - 10) / (rect.width - 20);
+        endTime.value = maxTime.value * rate;
+      }
+
+      // center rect moving
+      if (
+        allowCenterMove
+        && record.leftPosition >= 10
+        && Math.floor(record.rightPosition) <= Math.floor(rect.width - 10)
+      ) {
+        const distanceDiff = x - record.centerAnchor;
+        const timeDiff = (distanceDiff / (rect.width - 20)) * maxTime.value;
+        if (record.startTime + timeDiff <= 0) {
+          startTime.value = 0;
+          endTime.value = record.endTime - record.startTime;
+          return false;
+        }
+        if (record.endTime + timeDiff >= maxTime.value) {
+          startTime.value = maxTime.value - (record.endTime - record.startTime);
+          endTime.value = maxTime.value;
+          return false;
+        }
+        startTime.value = record.startTime + timeDiff;
+        endTime.value = record.endTime + timeDiff;
+      }
+
+      // play bar moving
+      if (allowPlayBarMove && x >= 10 && x <= rect.width - 10) {
+        const rate = maxTime.value / ((rect.width - 20) / scaleRate.value);
+        const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
+        time.value = rate * (x - 10) + timeBuffer;
+      }
+      return false;
+    };
+
+    const onMarkerMouseDown = () => {
+      painter.on('anchor:mousedown', (event) => {
+        console.log(event, event.target.get('id'));
+      });
+    };
+
+    const onStopMoving = () => {
+      allowLeftMove = false;
+      allowRightMove = false;
+      allowCenterMove = false;
+      allowPlayBarMove = false;
+    };
+
+    const onContainerScroll = (event) => {
+      record.scroll = event.target.scrollTop;
+      drawAnchors();
+    };
+
+    const addEvents = () => {
+      leftPoint.on('mousedown', onLeftPointMouseDown);
+      rightPoint.on('mousedown', onRightPointMouseDown);
+      centerBar.on('mousedown', onCenterBarMouseDown);
+      playBarTriangle.on('mousedown', onAllowPlayBarMove);
+      playBarLine.on('mousedown', onAllowPlayBarMove);
+      timelineRect.on('mousedown', onAllowPlayBarMove);
+      painter.on('mousemove', onPainterMouseMove);
+      onMarkerMouseDown();
+      container.value.addEventListener('scroll', onContainerScroll);
+      document.addEventListener('mouseup', onStopMoving);
+    };
+
+    const removeEvents = () => {
+      leftPoint.off('mousedown', onLeftPointMouseDown);
+      rightPoint.off('mousedown', onRightPointMouseDown);
+      centerBar.off('mousedown', onCenterBarMouseDown);
+      playBarTriangle.off('mousedown', onAllowPlayBarMove);
+      playBarLine.off('mousedown', onAllowPlayBarMove);
+      timelineRect.off('mousedown', onAllowPlayBarMove);
+      painter.off('mousemove', onPainterMouseMove);
+      container.value.removeEventListener('scroll', onContainerScroll);
+      document.removeEventListener('mouseup', onStopMoving);
     };
 
     throttledWatch(rect, () => {
@@ -710,7 +713,7 @@ export default defineComponent({
   }
 
   &__content {
-    height: 500px;
+    height: 360px;
     border-top: 1px solid #efefef;
     overflow: hidden;
     box-sizing: border-box;
