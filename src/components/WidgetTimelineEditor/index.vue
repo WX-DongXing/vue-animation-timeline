@@ -431,12 +431,14 @@ export default defineComponent({
       }, { totalList: [], total: 0 });
 
       options.forEach(({ isExpanded, animations }, i) => {
+        const allAnchors = animations.flatMap((animation) => animation.anchors);
+        const overviewAnchors = Array.from(new Set(allAnchors.map((anchor) => anchor.time)));
         const { totalList } = reduceList;
         timelineGroup.addShape('rect', {
           name: 'anchorRect',
           attrs: {
             x: 0,
-            y: (57 + i * 33) + (totalList[i] * 33) - record.scroll,
+            y: (57 + i * 33) + (totalList[i] * 32) - record.scroll,
             width,
             height: 32,
             fill: 'white',
@@ -446,13 +448,29 @@ export default defineComponent({
           name: 'anchorRectLine',
           attrs: {
             x1: 0,
-            y1: (56.5 + (i + 1) * 33) + (totalList[i] * 33) - record.scroll,
+            y1: (56.5 + (i + 1) * 33) + (totalList[i] * 32) - record.scroll,
             x2: width,
-            y2: (56.5 + (i + 1) * 33) + (totalList[i] * 33) - record.scroll,
+            y2: (56.5 + (i + 1) * 33) + (totalList[i] * 32) - record.scroll,
             stroke: '#f5f5f5',
             lineWidth: 1,
           },
         });
+        if (overviewAnchors.length > 0) {
+          overviewAnchors.forEach((anchor) => {
+            timelineGroup.addShape('marker', {
+              name: 'anchor',
+              attrs: {
+                x: ((width - 20) / maxTime.value) * anchor / scaleRate.value + 10 - record.offset,
+                y: (57 + i * 33) + 16 + (totalList[i] * 32) - record.scroll,
+                r: 5,
+                fill: 'black',
+                lineWidth: 0,
+                cursor: 'move',
+                symbol: 'diamond',
+              },
+            });
+          });
+        }
         if (isExpanded && animations.length > 0) {
           animations.forEach((animation, j) => {
             timelineGroup.addShape('rect', {
