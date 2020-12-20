@@ -86,10 +86,12 @@
 
 <script lang="ts">
 import {
-  computed, ref,
-  defineComponent, toRefs, reactive,
+  computed, ref, reactive,
+  defineComponent, toRefs,
 } from 'vue-demi';
-import { Anchor, ANIMATION_TYPES, AnimationType } from '@/utils/Constant.ts';
+import clonedeep from 'lodash.clonedeep';
+import { ANIMATION_TYPES } from '@/utils/constant.ts';
+import { Anchor, AnimationType } from '@/utils/types.ts';
 import SvgIcon from './SvgIcon.vue';
 
 export default defineComponent({
@@ -108,29 +110,28 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const { option, time } = toRefs(props);
-    const animationTypes = reactive(JSON.parse(JSON.stringify(ANIMATION_TYPES)));
+    const animationTypes = reactive(clonedeep(ANIMATION_TYPES));
     const isShowAnimations = ref(false);
-    const name = computed(() => option.value.name);
-    const visible = computed(() => option.value.visible);
-    const isExpanded = computed(() => option.value.isExpanded);
-    const isLocked = computed(() => option.value.isLocked);
-    const animations = computed({
-      get: () => option.value.animations || [],
-      set: (val: AnimationType[]) => {
-        option.value.animations = val;
-      },
-    });
+    const name = computed(() => option.value.transition.name);
+    const visible = computed(() => option.value.transition.visible);
+    const isExpanded = computed(() => option.value.transition.isExpanded);
+    const isLocked = computed(() => option.value.transition.isLocked);
+    const animations = computed(() => option.value.transition.animations);
 
     const handleShowAnimations = () => {
       isShowAnimations.value = !isShowAnimations.value;
     };
 
     const handleSelectAnimation = (animationType: AnimationType) => {
-      option.value.isExpanded = true;
+      option.value.transition.isExpanded = true;
       const target = animations.value.find(
         (animation: AnimationType) => animation.prop === animationType.prop,
       );
       if (!target) {
+        const propList = ['width', 'height', 'x', 'y'];
+        if (propList.includes(animationType.prop)) {
+          Object.assign(animationType, { value: option.value.transition[animationType.prop] });
+        }
         animations.value.push(reactive(animationType));
       } else {
         const index = animations.value.findIndex(
@@ -144,17 +145,17 @@ export default defineComponent({
     const isActive = (prop: string) => animations.value.find((animation: AnimationType) => animation.prop === prop);
 
     const handleVisible = () => {
-      option.value.visible = !option.value.visible;
+      option.value.transition.visible = !option.value.transition.visible;
       emit('update');
     };
 
     const handleLocked = () => {
-      option.value.isLocked = !option.value.isLocked;
+      option.value.transition.isLocked = !option.value.transition.isLocked;
       emit('update');
     };
 
     const handleExpanded = () => {
-      option.value.isExpanded = !option.value.isExpanded;
+      option.value.transition.isExpanded = !option.value.transition.isExpanded;
       emit('update');
     };
 

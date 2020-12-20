@@ -14,7 +14,26 @@ export interface AnimationType {
   anchors: Anchor[];
 }
 
-export const ANIMATION_TYPES: AnimationType[] = [
+const OFFSET = 50;
+
+const TICK_MIN_LENGTH = 50;
+
+const TICK_MAX_LENGTH = 150;
+
+const DEFAULT_OPTION = {
+  isExpanded: false,
+  visible: true,
+  isLocked: false,
+  animations: [],
+};
+
+const ANIMATION_OPTIONS = {
+  delay: 0,
+  duration: 50,
+  easing: 'easeLinear',
+};
+
+const ANIMATION_TYPES: AnimationType[] = [
   {
     name: '宽', title: 'width', icon: 'more-horizontal', prop: 'width', desc: '', value: 0, anchors: [],
   },
@@ -61,3 +80,12 @@ export const ANIMATION_TYPES: AnimationType[] = [
     name: '垂直缩放', title: 'scale-y', icon: 'maximize-2', prop: 'scaleY', desc: 'y', value: 0, anchors: [],
   },
 ];
+
+export {
+  OFFSET,
+  TICK_MIN_LENGTH,
+  TICK_MAX_LENGTH,
+  DEFAULT_OPTION,
+  ANIMATION_OPTIONS,
+  ANIMATION_TYPES,
+};

@@ -21,6 +21,7 @@ module.exports = {
     'max-len': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'guard-for-in': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'import/extensions': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'max-classes-per-file': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/no-var-requires': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/no-explicit-any': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/ban-ts-ignore': process.env.NODE_ENV === 'production' ? 'warn' : 'off',

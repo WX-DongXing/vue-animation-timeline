@@ -77,23 +77,15 @@ import {
   reactive, computed, onUnmounted, toRefs,
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
+import clonedeep from 'lodash.clonedeep';
 import useResize from '@/utils/useResize.ts';
+import Transition from '@/models/Transition';
+import {
+  OFFSET, TICK_MIN_LENGTH, TICK_MAX_LENGTH,
+  ANIMATION_OPTIONS,
+} from '@/utils/constant.ts';
 import SvgIcon from './modules/SvgIcon';
 import Widget from './modules/Widget';
-
-const OFFSET = 50;
-const TICK_MIN_LENGTH = 50;
-const TICK_MAX_LENGTH = 150;
-const DEFAULT_OPTION = {
-  isExpanded: false,
-  visible: true,
-  isLocked: false,
-};
-const ANIMATION_OPTIONS = {
-  delay: 0,
-  duration: 50,
-  easing: 'easeLinear',
-};
 
 export default defineComponent({
   components: {
@@ -106,11 +98,14 @@ export default defineComponent({
       default: () => ([]),
     },
   },
-  setup(props) {
+  model: {},
+  setup(props, { emit }) {
     const { widgets } = toRefs(props);
     const { rect } = useResize();
     const options = reactive(
-      [...widgets.value].map((widget) => reactive({ ...widget, ...DEFAULT_OPTION, animations: [] })),
+      clonedeep(widgets.value).map((widget) => reactive(
+        { ...widget, transition: new Transition(widget) },
+      )),
     );
     const time = ref(0);
     const startTime = ref(0);
@@ -118,6 +113,7 @@ export default defineComponent({
     const endTime = ref(10000);
     const calcEndTime = ref(10000);
     const maxTime = ref(10000);
+
     let painter = ref();
     let timeRect = ref();
     let timelineRect = ref();
@@ -128,6 +124,7 @@ export default defineComponent({
     let playBarLine = ref();
     let timelineAxis = ref();
     let timelineGroup = ref();
+
     const axisTicks = ref([]);
     const isPlay = ref(false);
     const isRepeat = ref(false);
@@ -424,13 +421,13 @@ export default defineComponent({
         if (!pre) {
           acc.totalList.push(0);
         } else {
-          acc.total += (pre.isExpanded ? pre.animations.length : 0);
+          acc.total += (pre.transition.isExpanded ? pre.transition.animations.length : 0);
           acc.totalList.push(acc.total);
         }
         return acc;
       }, { totalList: [], total: 0 });
 
-      options.forEach(({ isExpanded, animations }, i) => {
+      options.forEach(({ transition: { isExpanded, animations } }, i) => {
         const allAnchors = animations.flatMap((animation) => animation.anchors);
         const overviewAnchors = Array.from(new Set(allAnchors.map((anchor) => anchor.time)));
         const { totalList } = reduceList;
@@ -542,6 +539,7 @@ export default defineComponent({
     const handleUpdate = () => {
       drawAnchors();
       setPlayBarToFront();
+      emit('update', options);
     };
 
     const onLeftPointMouseDown = () => {
@@ -712,8 +710,10 @@ export default defineComponent({
 
 <style scoped lang="less">
 .widget-timeline-editor {
+  display: flex;
+  flex-flow: column nowrap;
   width: 100%;
-  height: 100%;
+  min-height: 380px;
   overflow: hidden;
   border: 1px solid #cccccc;
   border-top: none;
@@ -731,11 +731,12 @@ export default defineComponent({
   }
 
   &__content {
-    height: 360px;
+    width: 100%;
+    height: 100%;
     border-top: 1px solid #efefef;
     overflow: hidden;
     box-sizing: border-box;
-    padding: 0 12px 12px 0;
+    padding: 0 0 12px 0;
   }
 
   &__left {
