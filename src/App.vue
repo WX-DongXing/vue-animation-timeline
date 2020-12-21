@@ -15,18 +15,18 @@
       >
       </div>
     </div>
-    <widget-timeline-editor :widgets="widgets" @update="handleUpdate" />
+    <animation-timeline :widgets="widgets" @update="handleUpdate" />
   </div>
 </template>
 
 <script lang="ts">
 import { reactive } from 'vue-demi';
 import { Component, Vue } from 'vue-property-decorator';
-import WidgetTimelineEditor from '@/components/WidgetTimelineEditor/index.vue';
+import AnimationTimeline from '@/components/AnimationTimeline/index.vue';
 
 @Component({
   components: {
-    WidgetTimelineEditor,
+    AnimationTimeline,
   },
   setup() {
     let widgets = reactive([

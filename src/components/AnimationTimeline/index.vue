@@ -1,21 +1,21 @@
 <template>
-  <div class="widget-timeline-editor">
+  <div class="animation-timeline">
     <!-- S header area -->
     <header>
-      <div class="widget-timeline-editor__icons">
+      <div class="animation-timeline__icons">
         <svg-icon :icon-name="isPlay ? 'pause' : 'play'" @click="handlePlay" />
         <svg-icon icon-name="square" @click="handleReset" />
 
-        <span class="widget-timeline-editor__divider"></span>
+        <span class="animation-timeline__divider"></span>
 
-        <div class="widget-timeline-editor__control">
+        <div class="animation-timeline__control">
           <svg-icon icon-name="corner-up-left" @click="handleBack" />
           <svg-icon :icon-name="isRepeat ? 'repeat' : 'shuffle'" @click="handleRepeat" />
         </div>
       </div>
       <!-- / icon area -->
 
-      <div class="widget-timeline-editor__title">
+      <div class="animation-timeline__title">
         <span>{{ timeScale }}</span>
         <span>{{ maxTimeScale }}</span>
       </div>
@@ -25,15 +25,15 @@
     <!-- E header area -->
 
     <!-- S content area -->
-    <section class="widget-timeline-editor__content">
-      <div class="widget-timeline-editor__left">
-        <div class="widget-timeline-editor__menu">
-          <div class="widget-timeline-editor__max">
+    <section class="animation-timeline__content">
+      <div class="animation-timeline__left">
+        <div class="animation-timeline__menu">
+          <div class="animation-timeline__max">
             <span>总时长：</span>
             <input type="text" v-model.trim="maxTimeScale">
           </div>
 
-          <div class="widget-timeline-editor__sign">
+          <div class="animation-timeline__sign">
             <div>
               <svg-icon icon-name="eye-off" />
               <svg-icon icon-name="lock" />
@@ -46,7 +46,7 @@
           </div>
         </div>
 
-        <div class="widget-timeline-editor__widgets" ref="container">
+        <div class="animation-timeline__widgets" ref="container">
           <widget
             :time="time"
             v-for="(option, index) in options"
@@ -59,7 +59,7 @@
       </div>
       <!-- E widget control panel -->
 
-      <div class="widget-timeline-editor__right">
+      <div class="animation-timeline__right">
         <div id="painter"></div>
       </div>
       <!-- E timeline control panel  -->
@@ -709,7 +709,7 @@ export default defineComponent({
 </script>
 
 <style scoped lang="less">
-.widget-timeline-editor {
+.animation-timeline {
   display: flex;
   flex-flow: column nowrap;
   width: 100%;
@@ -858,5 +858,22 @@ export default defineComponent({
     width: 100%;
     height: 100%;
   }
+}
+
+::-webkit-scrollbar {
+  background-color: white;
+  width: 6px;
+  height: 6px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-button {
+  height: 0;
+  width: 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #b9b9bd;
+  border-radius: 3px;
 }
 </style>
