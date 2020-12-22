@@ -12,12 +12,26 @@ const install = (app: any) => {
     maxTime: 10000,
     // store anime instance
     animates: [],
+    // repeat animate
+    isRepeat: false,
   };
 
   app.prototype.$animate = {
     play: () => {
       // @ts-ignore
       app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.play());
+    },
+    pause: () => {
+      // @ts-ignore
+      app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.pause());
+    },
+    restart: () => {
+      // @ts-ignore
+      app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.restart());
+    },
+    seek: (timeStamp: number) => {
+      // @ts-ignore
+      app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.seek(timeStamp));
     },
   };
 };

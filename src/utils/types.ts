@@ -23,6 +23,7 @@ interface Animate {
 
 interface AnimationParams {
   maxTime: number;
+  isRepeat: boolean;
   animates: Animate[];
 }
 

@@ -523,12 +523,15 @@ export default defineComponent({
       time.value = 0;
       setTimeout(() => {
         isPlay.value = true;
+        instance.$animate.restart();
       });
     };
 
     const handleBack = () => {
       isPlay.value = false;
       time.value = 0;
+      instance.$animate.pause();
+      instance.$animate.seek(0);
     };
 
     const handleRepeat = () => {

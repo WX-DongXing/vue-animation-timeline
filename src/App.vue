@@ -1,7 +1,6 @@
 <template>
   <div id="app">
     <div class="screen">
-      {{ widgets }}
       <div
         class="panel"
         v-for="widget in widgets"
@@ -22,7 +21,6 @@
 </template>
 
 <script lang="ts">
-import anime from 'animejs';
 import { defineComponent } from 'vue-demi';
 
 export default defineComponent({
