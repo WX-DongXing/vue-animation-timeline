@@ -73,7 +73,7 @@
 import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
-  defineComponent, onMounted, ref,
+  defineComponent, onMounted, ref, getCurrentInstance,
   reactive, computed, onUnmounted, toRefs,
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
@@ -88,6 +88,7 @@ import SvgIcon from './modules/SvgIcon';
 import Widget from './modules/Widget';
 
 export default defineComponent({
+  name: 'AnimationTimeline',
   components: {
     SvgIcon,
     Widget,
@@ -100,6 +101,7 @@ export default defineComponent({
   },
   model: {},
   setup(props, { emit }) {
+    const instance = getCurrentInstance();
     const { widgets } = toRefs(props);
     const { rect } = useResize();
     const options = reactive(
@@ -513,6 +515,7 @@ export default defineComponent({
 
     const handlePlay = () => {
       isPlay.value = !isPlay.value;
+      instance.$animate.play();
     };
 
     const handleReset = () => {

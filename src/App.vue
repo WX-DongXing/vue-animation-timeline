@@ -1,16 +1,18 @@
 <template>
   <div id="app">
     <div class="screen">
+      {{ widgets }}
       <div
         class="panel"
-        v-for="{ key, x, y, width, height, color } in widgets"
-        :key="key"
+        v-for="widget in widgets"
+        v-animation="widget"
+        :key="widget.key"
         :style="{
-          height: `${height}px`,
-          width: `${width}px`,
-          top: `${y}px`,
-          left: `${x}px`,
-          background: `${color}`,
+          height: `${widget.height}px`,
+          width: `${widget.width}px`,
+          top: `${widget.y}px`,
+          left: `${widget.x}px`,
+          background: `${widget.color}`,
         }"
       >
       </div>
@@ -20,44 +22,37 @@
 </template>
 
 <script lang="ts">
-import { reactive } from 'vue-demi';
-import { Component, Vue } from 'vue-property-decorator';
-import AnimationTimeline from '@/components/AnimationTimeline/index.vue';
+import anime from 'animejs';
+import { defineComponent } from 'vue-demi';
 
-@Component({
-  components: {
-    AnimationTimeline,
-  },
-  setup() {
-    let widgets = reactive([
-      {
-        key: 1, name: '明细表', y: 16, x: 16, width: 84, height: 84, color: '#6597fb', transition: {},
-      },
-      {
-        key: 2, name: '聚合表', y: 116, x: 16, width: 84, height: 84, color: '#61daac',
-      },
-      {
-        key: 3, name: '透视表', y: 216, x: 16, width: 84, height: 84, color: '#667798',
-      },
-      {
-        key: 4, name: '指标卡', y: 316, x: 16, width: 84, height: 84, color: '#76cced',
-      },
-      {
-        key: 5, name: '词云图', y: 416, x: 16, width: 84, height: 84, color: '#e76b5a',
-      },
-    ]);
-
-    const handleUpdate = (items: any[]) => {
-      widgets = items;
-    };
-
+export default defineComponent({
+  data() {
     return {
-      widgets,
-      handleUpdate,
+      widgets: [
+        {
+          key: 1, name: '明细表', y: 16, x: 16, width: 84, height: 84, color: '#6597fb',
+        },
+        {
+          key: 2, name: '聚合表', y: 116, x: 16, width: 84, height: 84, color: '#61daac',
+        },
+        {
+          key: 3, name: '透视表', y: 216, x: 16, width: 84, height: 84, color: '#667798',
+        },
+        {
+          key: 4, name: '指标卡', y: 316, x: 16, width: 84, height: 84, color: '#76cced',
+        },
+        {
+          key: 5, name: '词云图', y: 416, x: 16, width: 84, height: 84, color: '#e76b5a',
+        },
+      ],
     };
   },
-})
-export default class App extends Vue {}
+  methods: {
+    handleUpdate(items: any[]) {
+      this.widgets = items;
+    },
+  },
+});
 </script>
 
 <style lang="less">

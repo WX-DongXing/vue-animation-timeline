@@ -1,18 +1,4 @@
-export interface Anchor {
-  time: number;
-  value: number;
-  curve?: string;
-}
-
-export interface AnimationType {
-  name: string;
-  title: string;
-  icon: string;
-  prop: string;
-  desc: string;
-  value: number;
-  anchors: Anchor[];
-}
+import { AnimationType } from '@/utils/types';
 
 const OFFSET = 50;
 

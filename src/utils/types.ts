@@ -1,3 +1,5 @@
+import Vue from 'vue';
+
 interface Anchor {
   time: number;
   value: number;
@@ -14,7 +16,25 @@ interface AnimationType {
   anchors: Anchor[];
 }
 
+interface Animate {
+  key: number | string;
+  animate: any;
+}
+
+interface AnimationParams {
+  maxTime: number;
+  animates: Animate[];
+}
+
+interface AnimationTimelineProp extends Vue {
+  '$animateParams': AnimationParams;
+  '$play': Function;
+}
+
 export {
   Anchor,
+  Animate,
   AnimationType,
+  AnimationParams,
+  AnimationTimelineProp,
 };
