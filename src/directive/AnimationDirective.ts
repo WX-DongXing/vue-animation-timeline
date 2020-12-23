@@ -17,6 +17,7 @@ const animateOptions = (transition: Transition) => (transition.animations || [])
     }
     return acc;
   }, [])
+  .sort((a, b) => a.anchorTime - b.anchorTime)
   .map(({ anchorTime, ...props }: any, index: number, array: any[]) => {
     const preProp: any = array[index - 1];
     return {
@@ -41,7 +42,7 @@ const AnimationDirectiveV2: DirectiveOptions = {
       loop: isRepeat,
       autoplay: false,
     });
-    const options = animateOptions(value.transition || []);
+    const options = animateOptions(value.transition || {});
     options.forEach(({ animateProp, time }) => animate.add(animateProp, time));
     animates.push({ key: value.key, animate });
   },

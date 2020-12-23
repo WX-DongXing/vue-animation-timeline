@@ -361,8 +361,8 @@ export default defineComponent({
       position: absolute;
       display: block;
       content: '';
-      height: 32px;
-      width: 40px;
+      height: 84px;
+      width: 84px;
       top: -32px;
       right: -12px;
       cursor: pointer;

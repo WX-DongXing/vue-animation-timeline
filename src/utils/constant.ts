@@ -27,10 +27,10 @@ const ANIMATION_TYPES: AnimationType[] = [
     name: '高', title: 'height', icon: 'more-vertical', prop: 'height', desc: '', value: 0, anchors: [],
   },
   {
-    name: '水平位置', title: 'x', icon: 'move', prop: 'x', desc: 'x', value: 0, anchors: [],
+    name: '水平位置', title: 'x', icon: 'move', prop: 'left', desc: 'x', value: 0, anchors: [],
   },
   {
-    name: '垂直位置', title: 'y', icon: 'move', prop: 'y', desc: 'y', value: 0, anchors: [],
+    name: '垂直位置', title: 'y', icon: 'move', prop: 'top', desc: 'y', value: 0, anchors: [],
   },
   {
     name: '水平位移', title: 'translate-x', icon: 'navigation', prop: 'translateX', desc: 'x', value: 0, anchors: [],
@@ -60,10 +60,10 @@ const ANIMATION_TYPES: AnimationType[] = [
     name: '垂直倾斜', title: 'skew-y', icon: 'italic', prop: 'skewY', desc: 'y', value: 0, anchors: [],
   },
   {
-    name: '水平缩放', title: 'scale-x', icon: 'maximize-2', prop: 'scaleX', desc: 'x', value: 0, anchors: [],
+    name: '水平缩放', title: 'scale-x', icon: 'maximize-2', prop: 'scaleX', desc: 'x', value: 1, anchors: [],
   },
   {
-    name: '垂直缩放', title: 'scale-y', icon: 'maximize-2', prop: 'scaleY', desc: 'y', value: 0, anchors: [],
+    name: '垂直缩放', title: 'scale-y', icon: 'maximize-2', prop: 'scaleY', desc: 'y', value: 1, anchors: [],
   },
 ];
 

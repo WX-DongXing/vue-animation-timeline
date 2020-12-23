@@ -92,5 +92,6 @@ export default defineComponent({
 
 .panel {
   position: absolute;
+  perspective: 600px;
 }
 </style>
