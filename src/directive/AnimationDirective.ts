@@ -53,7 +53,7 @@ const AnimationDirectiveV2: DirectiveOptions = {
       target.animate.duration = maxTime;
       target.animate.loop = isRepeat;
       target.animate.children = [];
-      const options = animateOptions(value.transition);
+      const options = animateOptions(value.transition || {});
       // reset animate options
       options.forEach(({ animateProp, time }) => target.animate.add(animateProp, time));
     }

@@ -51,7 +51,7 @@
 
         <span class="widget__divider"></span>
 
-        <p>{{ animation.name }}: </p>
+        <p>{{ animation.name }}</p>
 
         <input
           type="text"
@@ -179,49 +179,55 @@ export default defineComponent({
       emit('update');
     };
 
-    const handleLeft = ({ anchors }: AnimationType) => {
+    const handleLeft = (animation: AnimationType) => {
+      const { anchors } = animation;
       if (anchors.length === 0) return;
       const minAnchorTime = anchors[0].time;
-      if (minAnchorTime > time.value) {
+      if (minAnchorTime >= time.value) {
         return;
       }
-      const maxAnchorTime = anchors[anchors.length - 1].time;
-      if (maxAnchorTime < time.value) {
-        emit('timeUpdate', maxAnchorTime);
+      const lastAnchor = anchors[anchors.length - 1];
+      if (lastAnchor.time < time.value) {
+        animation.value = lastAnchor.value;
+        emit('timeUpdate', lastAnchor.time);
         return;
       }
 
       for (const index in anchors) {
         if (anchors[index].time === time.value) {
           const preAnchor = anchors[+index - 1];
-          // eslint-disable-next-line no-unused-expressions
+          animation.value = preAnchor.value;
           !!preAnchor && emit('timeUpdate', preAnchor.time);
           break;
         }
 
         if (anchors[index].time > time.value) {
-          emit('timeUpdate', anchors[+index - 1].time);
+          const targetAnchor = anchors[+index - 1];
+          animation.value = targetAnchor.value;
+          emit('timeUpdate', targetAnchor.time);
           break;
         }
       }
     };
 
-    const handleRight = ({ anchors }: AnimationType) => {
+    const handleRight = (animation: AnimationType) => {
+      const { anchors } = animation;
       if (anchors.length === 0) return;
-      const maxAnchorTime = anchors[anchors.length - 1].time;
-      if (maxAnchorTime < time.value) {
+      const maxAnchorTime = animation.anchors[anchors.length - 1].time;
+      if (maxAnchorTime <= time.value) {
         return;
       }
 
       for (const index in anchors) {
         if (anchors[index].time === time.value) {
           const nextAnchor = anchors[+index + 1];
-          // eslint-disable-next-line no-unused-expressions
+          animation.value = nextAnchor.value;
           !!nextAnchor && emit('timeUpdate', nextAnchor.time);
           break;
         }
 
         if (anchors[index].time > time.value) {
+          animation.value = anchors[index].value;
           emit('timeUpdate', anchors[index].time);
           break;
         }

@@ -70,6 +70,7 @@
 </template>
 
 <script>
+import anime from 'animejs';
 import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
@@ -99,7 +100,6 @@ export default defineComponent({
       default: () => ([]),
     },
   },
-  model: {},
   setup(props, { emit }) {
     const instance = getCurrentInstance();
     const { widgets } = toRefs(props);
@@ -115,6 +115,8 @@ export default defineComponent({
     const endTime = ref(10000);
     const calcEndTime = ref(10000);
     const maxTime = ref(10000);
+    const isPlay = ref(false);
+    const isRepeat = ref(false);
 
     let painter = ref();
     let timeRect = ref();
@@ -126,11 +128,13 @@ export default defineComponent({
     let playBarLine = ref();
     let timelineAxis = ref();
     let timelineGroup = ref();
-
     const axisTicks = ref([]);
-    const isPlay = ref(false);
-    const isRepeat = ref(false);
+
     const container = ref();
+
+    const element = reactive({
+      animate: null,
+    });
 
     const record = reactive({
       leftPosition: 0,
@@ -140,12 +144,11 @@ export default defineComponent({
       rightPosition: 0,
       offset: 0,
       scroll: 0,
+      allowLeftMove: false,
+      allowRightMove: false,
+      allowCenterMove: false,
+      allowPlayBarMove: false,
     });
-
-    let allowLeftMove = false;
-    let allowRightMove = false;
-    let allowCenterMove = false;
-    let allowPlayBarMove = false;
 
     const unitTickCount = computed(() => Math.trunc(maxTime.value / 1000));
     const unitLength = computed(() => (rect.width - 20) / maxTime.value);
@@ -279,6 +282,29 @@ export default defineComponent({
           cursor: 'move',
         },
       });
+    };
+
+    const initAnimate = () => {
+      element.animate = anime.timeline({
+        delay: 0,
+        duration: maxTime.value || 10000,
+        direction: 'normal',
+        easing: 'linear',
+        loop: isRepeat,
+        autoplay: false,
+        update: (params) => {
+          time.value = params.progress / 100 * maxTime.value;
+        },
+      }).add({ opacity: 0 });
+    };
+
+    const setAnimateOption = () => {
+      if (element.animate) {
+        element.animate.duration = maxTime.value;
+        element.animate.loop = isRepeat.value;
+        instance.$animateParams.maxTime = maxTime.value;
+        instance.$animateParams.isRepeat = isRepeat.value;
+      }
     };
 
     const resizeDecorate = () => {
@@ -515,7 +541,13 @@ export default defineComponent({
 
     const handlePlay = () => {
       isPlay.value = !isPlay.value;
-      instance.$animate.play();
+      if (isPlay.value) {
+        element.animate.play();
+        instance.$animate.play();
+      } else {
+        element.animate.pause();
+        instance.$animate.pause();
+      }
     };
 
     const handleReset = () => {
@@ -523,6 +555,7 @@ export default defineComponent({
       time.value = 0;
       setTimeout(() => {
         isPlay.value = true;
+        element.animate.restart();
         instance.$animate.restart();
       });
     };
@@ -532,6 +565,8 @@ export default defineComponent({
       time.value = 0;
       instance.$animate.pause();
       instance.$animate.seek(0);
+      element.animate.pause();
+      element.animate.seek(0);
     };
 
     const handleRepeat = () => {
@@ -549,42 +584,42 @@ export default defineComponent({
     };
 
     const onLeftPointMouseDown = () => {
-      allowLeftMove = true;
+      record.allowLeftMove = true;
       record.startTime = startTime.value;
     };
 
     const onRightPointMouseDown = () => {
-      allowRightMove = true;
+      record.allowRightMove = true;
       record.endTime = endTime.value;
     };
 
     const onCenterBarMouseDown = ({ x }) => {
-      allowCenterMove = true;
+      record.allowCenterMove = true;
       record.startTime = startTime.value;
       record.centerAnchor = x;
       record.endTime = endTime.value;
     };
 
     const onAllowPlayBarMove = () => {
-      allowPlayBarMove = true;
+      record.allowPlayBarMove = true;
     };
 
     const onPainterMouseMove = ({ x }) => {
       // left point moving
-      if (allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
+      if (record.allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
         const rate = (x - 10) / (rect.width - 20);
         startTime.value = maxTime.value * rate;
       }
 
       // right point moving
-      if (allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
+      if (record.allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
         const rate = (x - 10) / (rect.width - 20);
         endTime.value = maxTime.value * rate;
       }
 
       // center rect moving
       if (
-        allowCenterMove
+        record.allowCenterMove
         && record.leftPosition >= 10
         && Math.floor(record.rightPosition) <= Math.floor(rect.width - 10)
       ) {
@@ -605,7 +640,7 @@ export default defineComponent({
       }
 
       // play bar moving
-      if (allowPlayBarMove && x >= 10 && x <= rect.width - 10) {
+      if (record.allowPlayBarMove && x >= 10 && x <= rect.width - 10) {
         const rate = maxTime.value / ((rect.width - 20) / scaleRate.value);
         const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
         time.value = rate * (x - 10) + timeBuffer;
@@ -620,10 +655,10 @@ export default defineComponent({
     };
 
     const onStopMoving = () => {
-      allowLeftMove = false;
-      allowRightMove = false;
-      allowCenterMove = false;
-      allowPlayBarMove = false;
+      record.allowLeftMove = false;
+      record.allowRightMove = false;
+      record.allowCenterMove = false;
+      record.allowPlayBarMove = false;
     };
 
     const onContainerScroll = (event) => {
@@ -679,8 +714,11 @@ export default defineComponent({
       resizePlayBar();
     }, { throttle: 16 });
 
+    throttledWatch([endTime, isRepeat], setAnimateOption);
+
     onMounted(() => {
       initCanvas();
+      initAnimate();
       addEvents();
     });
 
