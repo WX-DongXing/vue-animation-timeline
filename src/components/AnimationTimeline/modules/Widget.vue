@@ -366,6 +366,7 @@ export default defineComponent({
       top: -32px;
       right: -12px;
       cursor: pointer;
+      z-index: -1;
     }
 
     span, svg {
