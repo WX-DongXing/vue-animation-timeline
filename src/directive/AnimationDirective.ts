@@ -6,28 +6,69 @@ import {
 } from '@/utils/types';
 
 // get animation timeline options
-const animateOptions = (transition: Transition) => (transition.animations || [])
-  .flatMap(({ prop, anchors }: AnimationType) => anchors.map(({ time, value }: Anchor) => ({ anchorTime: time, [prop]: value })))
-  .reduce((acc: any[], cur: any) => {
-    const collage = acc.find((item: any) => item.anchorTime === cur.anchorTime);
-    if (collage) {
-      Object.assign(collage, cur);
-    } else {
-      acc.push(cur);
-    }
-    return acc;
-  }, [])
-  .sort((a, b) => a.anchorTime - b.anchorTime)
-  .map(({ anchorTime, ...props }: any, index: number, array: any[]) => {
-    const preProp: any = array[index - 1];
+const animateOptions = (transition: Transition) => {
+  const anchorProps = (transition.animations || []).flatMap(({ prop, anchors }: AnimationType) => anchors.map(({ time, value }: Anchor, index: number, array: Anchor[]) => {
+    const preAnchor = array[index - 1];
     return {
-      time: preProp ? preProp.anchorTime : 0,
-      animateProp: {
-        duration: preProp ? anchorTime - preProp?.anchorTime : anchorTime,
-        ...props,
-      },
+      startTime: preAnchor ? preAnchor.time : 0,
+      endTime: time,
+      prop,
+      value,
+      preValue: preAnchor ? preAnchor.value : 0,
     };
-  });
+  }));
+
+  // get all time
+  const anchorTimes = [...new Set(anchorProps.map((anchorProp: any) => anchorProp.endTime))]
+    .sort((a, b) => a - b);
+
+  return anchorProps
+    .flatMap(({
+      startTime, endTime, prop, value, preValue,
+    }) => {
+      let middleTime = startTime;
+      const sections = [];
+      for (const anchorTime of anchorTimes) {
+        if (anchorTime > middleTime && anchorTime <= endTime) {
+          sections.push({
+            startTime: middleTime,
+            endTime: anchorTime,
+            [prop]: (anchorTime - startTime) / (endTime - startTime) * (value - preValue) + preValue,
+          });
+          middleTime = anchorTime;
+        }
+        if (anchorTime > endTime && endTime > middleTime) {
+          sections.push({
+            startTime: middleTime,
+            endTime,
+            [prop]: value,
+          });
+          break;
+        }
+      }
+      return sections;
+    })
+    .reduce((acc: any[], cur: any) => {
+      const collage = acc.find((item: any) => (item.startTime === cur.startTime) && (item.endTime === cur.endTime));
+      if (collage) {
+        Object.assign(collage, cur);
+      } else {
+        acc.push(cur);
+      }
+      return acc;
+    }, [])
+    .sort((a, b) => a.startTime - b.startTime)
+    .map(({ startTime, endTime, ...props }: any, index: number, array: any[]) => {
+      const preProp: any = array[index - 1];
+      return {
+        time: startTime,
+        animateProp: {
+          duration: preProp ? endTime - preProp?.endTime : endTime,
+          ...props,
+        },
+      };
+    });
+};
 
 const AnimationDirectiveV2: DirectiveOptions = {
   inserted(el: HTMLElement, { value }: VNodeDirective, vNode: VNode) {

@@ -488,7 +488,7 @@ export default defineComponent({
                 x: ((width - 20) / maxTime.value) * anchor / scaleRate.value + 10 - record.offset,
                 y: (57 + i * 33) + 16 + (totalList[i] * 32) - record.scroll,
                 r: 5,
-                fill: 'black',
+                fill: '#1890FF',
                 lineWidth: 0,
                 cursor: 'move',
                 symbol: 'diamond',
