@@ -305,6 +305,10 @@ export default defineComponent({
         instance.$animateParams.maxTime = maxTime.value;
         instance.$animateParams.isRepeat = isRepeat.value;
       }
+      options.forEach((option) => {
+        Object.assign(option.transition, { needUpdateProp: true });
+      });
+      emit('onUpdate', options);
     };
 
     const resizeDecorate = () => {
@@ -490,7 +494,6 @@ export default defineComponent({
                 r: 5,
                 fill: '#1890FF',
                 lineWidth: 0,
-                cursor: 'move',
                 symbol: 'diamond',
               },
             });
@@ -548,6 +551,7 @@ export default defineComponent({
         element.animate.pause();
         instance.$animate.pause();
       }
+      emit(isPlay.value ? 'onPlay' : 'onPause');
     };
 
     const handleReset = () => {
@@ -557,6 +561,7 @@ export default defineComponent({
         isPlay.value = true;
         element.animate.restart();
         instance.$animate.restart();
+        emit('onRestart');
       });
     };
 
@@ -567,10 +572,13 @@ export default defineComponent({
       instance.$animate.seek(0);
       element.animate.pause();
       element.animate.seek(0);
+      emit('onPause');
+      emit('onSeek');
     };
 
     const handleRepeat = () => {
       isRepeat.value = !isRepeat.value;
+      handleReset();
     };
 
     const handleTimeUpdate = (t) => {
@@ -580,7 +588,7 @@ export default defineComponent({
     const handleUpdate = () => {
       drawAnchors();
       setPlayBarToFront();
-      emit('update', options);
+      emit('onUpdate', options);
     };
 
     const onLeftPointMouseDown = () => {
@@ -714,7 +722,7 @@ export default defineComponent({
       resizePlayBar();
     }, { throttle: 16 });
 
-    throttledWatch([endTime, isRepeat], setAnimateOption);
+    throttledWatch([isRepeat, maxTimeScale], setAnimateOption);
 
     onMounted(() => {
       initCanvas();

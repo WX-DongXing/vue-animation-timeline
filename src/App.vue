@@ -16,7 +16,7 @@
       >
       </div>
     </div>
-    <animation-timeline :widgets="widgets" @update="handleUpdate" />
+    <animation-timeline :widgets="widgets" @onUpdate="handleUpdate" />
   </div>
 </template>
 

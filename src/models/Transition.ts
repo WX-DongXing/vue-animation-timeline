@@ -17,12 +17,17 @@ export default class Transition {
 
   isLocked: boolean;
 
+  needUpdateProp: boolean;
+
+  needUpdateOption: boolean;
+
   animations?: AnimationType[];
 
   constructor({
     name, width, height, x, y, animations,
   }: {
-    name: string; width: number; height: number; x: number; y: number; animations?: AnimationType[];
+    name: string; width: number; height: number; x: number; y: number;
+    needUpdateProp: boolean; needUpdateOption: boolean; animations?: AnimationType[];
   }) {
     this.name = name;
     this.width = width;
@@ -32,6 +37,8 @@ export default class Transition {
     this.isExpanded = false;
     this.visible = true;
     this.isLocked = false;
+    this.needUpdateProp = false;
+    this.needUpdateOption = false;
     this.animations = animations || [];
   }
 }

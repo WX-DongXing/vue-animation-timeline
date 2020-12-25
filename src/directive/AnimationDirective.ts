@@ -7,16 +7,17 @@ import {
 
 // get animation timeline options
 const animateOptions = (transition: Transition) => {
-  const anchorProps = (transition.animations || []).flatMap(({ prop, anchors }: AnimationType) => anchors.map(({ time, value }: Anchor, index: number, array: Anchor[]) => {
-    const preAnchor = array[index - 1];
-    return {
-      startTime: preAnchor ? preAnchor.time : 0,
-      endTime: time,
-      prop,
-      value,
-      preValue: preAnchor ? preAnchor.value : 0,
-    };
-  }));
+  const anchorProps = (transition.animations || [])
+    .flatMap(({ prop, anchors }: AnimationType) => anchors.map(({ time, value }: Anchor, index: number, array: Anchor[]) => {
+      const preAnchor = array[index - 1];
+      return {
+        startTime: preAnchor ? preAnchor.time : 0,
+        endTime: time,
+        prop,
+        value,
+        preValue: preAnchor ? preAnchor.value : 0,
+      };
+    }));
 
   // get all time
   const anchorTimes = [...new Set(anchorProps.map((anchorProp: any) => anchorProp.endTime))]
@@ -90,15 +91,21 @@ const AnimationDirectiveV2: DirectiveOptions = {
   update(el: HTMLElement, { value }: VNodeDirective, vNode: VNode) {
     const { maxTime, isRepeat, animates } = (vNode.context as AnimationTimelineProp).$animateParams;
     const target = animates.find((ani: Animate) => ani.key === value.key);
-    if (target) {
-      // update duration and clear old animate options
+    // only need update prop
+    if (target && value.transition.needUpdateProp) {
       target.animate.duration = maxTime;
       target.animate.loop = isRepeat;
+    }
+
+    // need update options
+    if (target && value.transition.needUpdateOption) {
       target.animate.children = [];
       const options = animateOptions(value.transition || {});
       // reset animate options
       options.forEach(({ animateProp, time }) => target.animate.add(animateProp, time));
     }
+    value.transition.needUpdateProp = false;
+    value.transition.needUpdateOption = false;
   },
   unbind(el: HTMLElement, { value }: VNodeDirective, vNode: VNode) {
     const { animates } = (vNode.context as AnimationTimelineProp).$animateParams;

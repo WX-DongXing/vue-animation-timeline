@@ -139,6 +139,7 @@ export default defineComponent({
         );
         animations.value.splice(index, 1);
       }
+      option.value.transition.needUpdateOption = true;
       emit('update');
     };
 
@@ -146,23 +147,28 @@ export default defineComponent({
 
     const handleVisible = () => {
       option.value.transition.visible = !option.value.transition.visible;
+      option.value.transition.needUpdateOption = true;
       emit('update');
     };
 
     const handleLocked = () => {
       option.value.transition.isLocked = !option.value.transition.isLocked;
+      option.value.transition.needUpdateOption = true;
       emit('update');
     };
 
     const handleExpanded = () => {
       option.value.transition.isExpanded = !option.value.transition.isExpanded;
+      option.value.transition.needUpdateOption = true;
       emit('update');
     };
 
     const handleRemove = ({ prop }: AnimationType) => {
       const index = animations.value.findIndex((animation: AnimationType) => animation.prop === prop);
-      animations.value[index].anchors = [];
+      const defaultAnimationType = ANIMATION_TYPES.find((animationType) => animationType.prop === animations.value[index].type);
+      Object.assign(animations.value[index], defaultAnimationType);
       animations.value.splice(index, 1);
+      option.value.transition.needUpdateOption = true;
       emit('update');
     };
 
@@ -176,6 +182,7 @@ export default defineComponent({
         const anchor: Anchor = anchors[index];
         anchors.splice(index, 1, { ...anchor, value: +target.value });
       }
+      option.value.transition.needUpdateOption = true;
       emit('update');
     };
 
@@ -242,6 +249,7 @@ export default defineComponent({
       } else {
         anchors.splice(index, 1);
       }
+      option.value.transition.needUpdateOption = true;
       emit('update');
     };
 
