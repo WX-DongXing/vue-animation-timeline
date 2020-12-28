@@ -3,6 +3,14 @@ const path = require('path');
 const resolve = (dir) => path.join(__dirname, dir);
 
 module.exports = {
+  css: {
+    extract: false,
+  },
+  configureWebpack: {
+    output: {
+      libraryExport: 'default',
+    },
+  },
   chainWebpack: (config) => {
     config.module
       .rule('svg')

@@ -1,5 +1,5 @@
 import { isVue2 } from 'vue-demi';
-import VueAnimationTimeline from '@/components/AnimationTimeline/index.vue';
+import VueAnimationTimeline from '@/packages/AnimationTimeline.vue';
 import { AnimationDirectiveV2, AnimationDirectiveV3 } from '@/directive/AnimationDirective';
 
 const install = (app: any) => {

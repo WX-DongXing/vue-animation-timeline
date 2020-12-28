@@ -85,8 +85,8 @@ import {
   OFFSET, TICK_MIN_LENGTH, TICK_MAX_LENGTH,
   ANIMATION_OPTIONS,
 } from '@/utils/constant.ts';
-import SvgIcon from './modules/SvgIcon';
-import Widget from './modules/Widget';
+import SvgIcon from '@/components/SvgIcon.vue';
+import Widget from '@/components/Widget.vue';
 
 export default defineComponent({
   name: 'AnimationTimeline',
@@ -383,19 +383,19 @@ export default defineComponent({
       });
       axisTicks.value = [];
 
-      for (const index in new Array(unitTickCount.value + 1).fill(null)) {
+      for (const _ in new Array(unitTickCount.value + 1).fill(null)) {
         const min = unitSecondLength.value / scaleRate.value <= TICK_MIN_LENGTH;
         const max = unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH;
         const minCount = Math.trunc(TICK_MIN_LENGTH / (unitSecondLength.value / scaleRate.value));
-        if (min && minCount > 0 && index % (minCount * 2) !== 0 && +index !== +unitTickCount.value) {
+        if (min && minCount > 0 && AnimationTimeline % (minCount * 2) !== 0 && +AnimationTimeline !== +unitTickCount.value) {
           continue;
         }
         const axisTick = painter.addShape('line', {
           name: 'axisTick',
           attrs: {
-            x1: 10 + (index * unitSecondLength.value) / scaleRate.value - record.offset,
+            x1: 10 + (AnimationTimeline * unitSecondLength.value) / scaleRate.value - record.offset,
             y1: 40,
-            x2: 10 + (index * unitSecondLength.value) / scaleRate.value - record.offset,
+            x2: 10 + (AnimationTimeline * unitSecondLength.value) / scaleRate.value - record.offset,
             y2: 48,
             stroke: '#212121',
             lineWidth: 1,
@@ -404,12 +404,12 @@ export default defineComponent({
 
         const axisText = painter.addShape('text', {
           attrs: {
-            x: (index >= 10 ? 0 : 5) + (
-              index * unitSecondLength.value
+            x: (AnimationTimeline >= 10 ? 0 : 5) + (
+              AnimationTimeline * unitSecondLength.value
             ) / scaleRate.value - record.offset,
             y: 40,
             fontFamily: 'PingFang SC',
-            text: (index > 0 && index % 60 === 0) ? `${index / 60}m` : `${index}s`,
+            text: (AnimationTimeline > 0 && AnimationTimeline % 60 === 0) ? `${AnimationTimeline / 60}m` : `${AnimationTimeline}s`,
             fontSize: 12,
             fill: '#212121',
           },
@@ -421,11 +421,11 @@ export default defineComponent({
             name: 'axisTick',
             attrs: {
               x1: 10 + (
-                index * unitSecondLength.value + i * (unitSecondLength.value / 5)
+                AnimationTimeline * unitSecondLength.value + i * (unitSecondLength.value / 5)
               ) / scaleRate.value - record.offset,
               y1: 42,
               x2: 10 + (
-                index * unitSecondLength.value + i * (unitSecondLength.value / 5)
+                AnimationTimeline * unitSecondLength.value + i * (unitSecondLength.value / 5)
               ) / scaleRate.value - record.offset,
               y2: 48,
               stroke: '#212121',
@@ -449,7 +449,7 @@ export default defineComponent({
       timelineGroup.clear();
       const { width } = rect;
       const reduceList = options.reduce((acc, cur, index, array) => {
-        const pre = array[index - 1];
+        const pre = array[AnimationTimeline - 1];
         if (!pre) {
           acc.totalList.push(0);
         } else {
