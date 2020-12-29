@@ -75,7 +75,7 @@ import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
   defineComponent, onMounted, ref, getCurrentInstance,
-  reactive, computed, onUnmounted, toRefs,
+  reactive, computed, onUnmounted, toRefs, provide,
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
 import clonedeep from 'lodash.clonedeep';
@@ -83,7 +83,7 @@ import useResize from '@/utils/useResize.ts';
 import Transition from '@/models/Transition';
 import {
   OFFSET, TICK_MIN_LENGTH, TICK_MAX_LENGTH,
-  ANIMATION_OPTIONS,
+  ANIMATION_OPTIONS, DEFAULT_FIELDS,
 } from '@/utils/constant.ts';
 import SvgIcon from '@/components/SvgIcon.vue';
 import Widget from '@/components/Widget.vue';
@@ -99,16 +99,25 @@ export default defineComponent({
       type: Array,
       default: () => ([]),
     },
+    fields: {
+      type: Object,
+      default: () => ({}),
+    },
   },
   setup(props, { emit }) {
     const instance = getCurrentInstance();
-    const { widgets } = toRefs(props);
+    const { widgets, fields } = toRefs(props);
     const { rect } = useResize();
     const options = reactive(
       clonedeep(widgets.value).map((widget) => reactive(
         { ...widget, transition: new Transition(widget) },
       )),
     );
+    const fieldMap = reactive({
+      ...DEFAULT_FIELDS, ...fields.value,
+    });
+    provide('fieldMap', fieldMap);
+
     const time = ref(0);
     const startTime = ref(0);
     const calcStartTime = ref(0);

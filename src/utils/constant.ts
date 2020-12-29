@@ -67,6 +67,14 @@ const ANIMATION_TYPES: AnimationType[] = [
   },
 ];
 
+const DEFAULT_FIELDS = {
+  name: 'name',
+  width: 'width',
+  height: 'height',
+  top: 'top',
+  left: 'left',
+};
+
 export {
   OFFSET,
   TICK_MIN_LENGTH,
@@ -74,4 +82,5 @@ export {
   DEFAULT_OPTION,
   ANIMATION_OPTIONS,
   ANIMATION_TYPES,
+  DEFAULT_FIELDS,
 };

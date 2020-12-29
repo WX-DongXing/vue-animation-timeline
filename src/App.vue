@@ -16,7 +16,7 @@
       >
       </div>
     </div>
-    <animation-timeline :widgets="widgets" @onUpdate="handleUpdate" />
+    <animation-timeline :widgets="widgets" :fields="fields" @onUpdate="handleUpdate" />
   </div>
 </template>
 
@@ -43,6 +43,13 @@ export default defineComponent({
           key: 5, name: '词云图', y: 416, x: 16, width: 84, height: 84, color: '#e76b5a',
         },
       ],
+      fields: {
+        name: 'name',
+        width: 'width',
+        height: 'height',
+        top: 'y',
+        left: 'x',
+      },
     };
   },
   methods: {
