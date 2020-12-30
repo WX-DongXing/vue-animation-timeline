@@ -7,9 +7,9 @@ export default class Transition {
 
   height: number;
 
-  x: number;
+  left: number;
 
-  y: number;
+  top: number;
 
   isExpanded: boolean;
 
@@ -23,22 +23,17 @@ export default class Transition {
 
   animations?: AnimationType[];
 
-  constructor({
-    name, width, height, x, y, animations,
-  }: {
-    name: string; width: number; height: number; x: number; y: number;
-    needUpdateProp: boolean; needUpdateOption: boolean; animations?: AnimationType[];
-  }) {
-    this.name = name;
-    this.width = width;
-    this.height = height;
-    this.x = x;
-    this.y = y;
+  constructor(widget: any, fieldMap: any) {
+    this.name = widget[fieldMap.name];
+    this.width = widget[fieldMap.width];
+    this.height = widget[fieldMap.height];
+    this.left = widget[fieldMap.left] || 0;
+    this.top = widget[fieldMap.top] || 0;
+    this.animations = widget.animations || [];
     this.isExpanded = false;
     this.visible = true;
     this.isLocked = false;
     this.needUpdateProp = false;
     this.needUpdateOption = false;
-    this.animations = animations || [];
   }
 }

@@ -86,7 +86,7 @@
 
 <script lang="ts">
 import {
-  computed, ref, reactive, inject,
+  computed, ref, reactive,
   defineComponent, toRefs,
 } from 'vue-demi';
 import clonedeep from 'lodash.clonedeep';
@@ -117,9 +117,6 @@ export default defineComponent({
     const isExpanded = computed(() => option.value.transition.isExpanded);
     const isLocked = computed(() => option.value.transition.isLocked);
     const animations = computed(() => option.value.transition.animations);
-    const fieldMap = inject('fieldMap');
-
-    console.log(fieldMap);
 
     const handleShowAnimations = () => {
       isShowAnimations.value = !isShowAnimations.value;
@@ -131,7 +128,7 @@ export default defineComponent({
         (animation: AnimationType) => animation.prop === animationType.prop,
       );
       if (!target) {
-        const propList = ['width', 'height', 'x', 'y'];
+        const propList = ['width', 'height', 'top', 'left'];
         if (propList.includes(animationType.prop)) {
           Object.assign(animationType, { value: option.value.transition[animationType.prop] });
         }

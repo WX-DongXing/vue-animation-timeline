@@ -75,7 +75,7 @@ import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
   defineComponent, onMounted, ref, getCurrentInstance,
-  reactive, computed, onUnmounted, toRefs, provide,
+  reactive, computed, onUnmounted, toRefs,
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
 import clonedeep from 'lodash.clonedeep';
@@ -108,15 +108,14 @@ export default defineComponent({
     const instance = getCurrentInstance();
     const { widgets, fields } = toRefs(props);
     const { rect } = useResize();
-    const options = reactive(
-      clonedeep(widgets.value).map((widget) => reactive(
-        { ...widget, transition: new Transition(widget) },
-      )),
-    );
     const fieldMap = reactive({
       ...DEFAULT_FIELDS, ...fields.value,
     });
-    provide('fieldMap', fieldMap);
+    const options = reactive(
+      clonedeep(widgets.value).map((widget) => reactive(
+        { ...widget, transition: new Transition(widget, fieldMap) },
+      )),
+    );
 
     const time = ref(0);
     const startTime = ref(0);
@@ -392,19 +391,19 @@ export default defineComponent({
       });
       axisTicks.value = [];
 
-      for (const _ in new Array(unitTickCount.value + 1).fill(null)) {
+      for (const index in new Array(unitTickCount.value + 1).fill(null)) {
         const min = unitSecondLength.value / scaleRate.value <= TICK_MIN_LENGTH;
         const max = unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH;
         const minCount = Math.trunc(TICK_MIN_LENGTH / (unitSecondLength.value / scaleRate.value));
-        if (min && minCount > 0 && AnimationTimeline % (minCount * 2) !== 0 && +AnimationTimeline !== +unitTickCount.value) {
+        if (min && minCount > 0 && index % (minCount * 2) !== 0 && +index !== +unitTickCount.value) {
           continue;
         }
         const axisTick = painter.addShape('line', {
           name: 'axisTick',
           attrs: {
-            x1: 10 + (AnimationTimeline * unitSecondLength.value) / scaleRate.value - record.offset,
+            x1: 10 + (index * unitSecondLength.value) / scaleRate.value - record.offset,
             y1: 40,
-            x2: 10 + (AnimationTimeline * unitSecondLength.value) / scaleRate.value - record.offset,
+            x2: 10 + (index * unitSecondLength.value) / scaleRate.value - record.offset,
             y2: 48,
             stroke: '#212121',
             lineWidth: 1,
@@ -413,12 +412,12 @@ export default defineComponent({
 
         const axisText = painter.addShape('text', {
           attrs: {
-            x: (AnimationTimeline >= 10 ? 0 : 5) + (
-              AnimationTimeline * unitSecondLength.value
+            x: (index >= 10 ? 0 : 5) + (
+              index * unitSecondLength.value
             ) / scaleRate.value - record.offset,
             y: 40,
             fontFamily: 'PingFang SC',
-            text: (AnimationTimeline > 0 && AnimationTimeline % 60 === 0) ? `${AnimationTimeline / 60}m` : `${AnimationTimeline}s`,
+            text: (index > 0 && index % 60 === 0) ? `${index / 60}m` : `${index}s`,
             fontSize: 12,
             fill: '#212121',
           },
@@ -430,11 +429,11 @@ export default defineComponent({
             name: 'axisTick',
             attrs: {
               x1: 10 + (
-                AnimationTimeline * unitSecondLength.value + i * (unitSecondLength.value / 5)
+                index * unitSecondLength.value + i * (unitSecondLength.value / 5)
               ) / scaleRate.value - record.offset,
               y1: 42,
               x2: 10 + (
-                AnimationTimeline * unitSecondLength.value + i * (unitSecondLength.value / 5)
+                index * unitSecondLength.value + i * (unitSecondLength.value / 5)
               ) / scaleRate.value - record.offset,
               y2: 48,
               stroke: '#212121',
@@ -458,7 +457,7 @@ export default defineComponent({
       timelineGroup.clear();
       const { width } = rect;
       const reduceList = options.reduce((acc, cur, index, array) => {
-        const pre = array[AnimationTimeline - 1];
+        const pre = array[index - 1];
         if (!pre) {
           acc.totalList.push(0);
         } else {
