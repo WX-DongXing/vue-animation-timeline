@@ -118,9 +118,48 @@ const AnimationDirectiveV2: DirectiveOptions = {
 };
 
 const AnimationDirectiveV3: any = {
-  mounted(el: HTMLElement, { value }: any) {
-    const options = animateOptions(value.transition);
-    console.log('update: ', options);
+  mounted(el: HTMLElement, { value }: any, vNode: any) {
+    const { maxTime, isRepeat, animates } = (vNode.context as AnimationTimelineProp).$animateParams;
+    // init animate instance
+    const animate = anime.timeline({
+      targets: el,
+      delay: 0,
+      duration: maxTime || 10000,
+      direction: 'normal',
+      easing: 'linear',
+      loop: isRepeat,
+      autoplay: false,
+    });
+    const options = animateOptions(value.transition || {});
+    options.forEach(({ animateProp, time }) => animate.add(animateProp, time));
+    animates.push({ key: value.key, animate });
+  },
+  updated(el: HTMLElement, { value }: any, vNode: any) {
+    const { maxTime, isRepeat, animates } = (vNode.context as AnimationTimelineProp).$animateParams;
+    const target = animates.find((ani: Animate) => ani.key === value.key);
+    // only need update prop
+    if (target && value.transition.needUpdateProp) {
+      target.animate.duration = maxTime;
+      target.animate.loop = isRepeat;
+    }
+
+    // need update options
+    if (target && value.transition.needUpdateOption) {
+      target.animate.children = [];
+      const options = animateOptions(value.transition || {});
+      // reset animate options
+      options.forEach(({ animateProp, time }) => target.animate.add(animateProp, time));
+    }
+    value.transition.needUpdateProp = false;
+    value.transition.needUpdateOption = false;
+  },
+  unmounted(el: HTMLElement, { value }: any, vNode: any) {
+    const { animates } = (vNode.context as AnimationTimelineProp).$animateParams;
+    const index = animates.findIndex((ani: Animate) => ani.key === value.key);
+    if (index !== -1) {
+      // remove anime instance
+      animates.splice(index, 1);
+    }
   },
 };
 
