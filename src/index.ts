@@ -1,39 +1,37 @@
 import { isVue2 } from 'vue-demi';
-import VueAnimationTimeline from '@/packages/AnimationTimeline.vue';
+import AnimationTimeline from '@/lib/AnimationTimeline.vue';
 import { AnimationDirectiveV2, AnimationDirectiveV3 } from '@/directive/AnimationDirective';
 
-const install = (app: any) => {
-  app.component(VueAnimationTimeline.name, VueAnimationTimeline);
-  app.directive(
-    'animation', isVue2 ? AnimationDirectiveV2 : AnimationDirectiveV3,
-  );
-  app.prototype.$animateParams = {
-    // timeline max time
-    maxTime: 10000,
-    // store anime instance
-    animates: [],
-    // repeat animate
-    isRepeat: false,
-  };
+export { AnimationTimeline };
 
-  app.prototype.$animate = {
-    play: () => {
-      // @ts-ignore
-      app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.play());
-    },
-    pause: () => {
-      // @ts-ignore
-      app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.pause());
-    },
-    restart: () => {
-      // @ts-ignore
-      app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.restart());
-    },
-    seek: (timeStamp: number) => {
-      // @ts-ignore
-      app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.seek(timeStamp));
-    },
-  };
+export default {
+  install: (app: any) => {
+    app.component(AnimationTimeline.name, AnimationTimeline);
+    app.directive(
+      'animation', isVue2 ? AnimationDirectiveV2 : AnimationDirectiveV3,
+    );
+    app.prototype.$animateParams = {
+      // timeline max time
+      maxTime: 10000,
+      // store anime instance
+      animates: [],
+      // repeat animate
+      isRepeat: false,
+    };
+
+    app.prototype.$animate = {
+      play: () => {
+        app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.play());
+      },
+      pause: () => {
+        app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.pause());
+      },
+      restart: () => {
+        app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.restart());
+      },
+      seek: (timeStamp: number) => {
+        app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.seek(timeStamp));
+      },
+    };
+  },
 };
-
-export default install;

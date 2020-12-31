@@ -6,7 +6,7 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "build-lib": "vue-cli-service build --target lib --name vue-animation-timeline src/packages/AnimationTimeline.vue"
+    "build-lib": "vue-cli-service build --target lib --name vue-animation-timeline src/index.ts"
   },
   "dependencies": {
     "@antv/g-canvas": "^0.4.15",
