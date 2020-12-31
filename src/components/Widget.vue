@@ -2,7 +2,7 @@
   <div class="widget">
     <div class="widget__header">
       <svg-icon
-        :icon-name="!visible ? 'eye-off' : 'circle'"
+        :icon-name="!visible ? 'eye-close' : 'circle'"
         @click="handleVisible"
       />
 
@@ -18,14 +18,14 @@
          'widget__expand',
          isExpanded ? 'widget__expand--active' : ''
        ]"
-        icon-name="chevron-right"
+        icon-name="right"
         @click="handleExpanded"
       />
 
       <span @click="handleExpanded">{{ name }}</span>
 
       <div class="widget__suffix">
-        <svg-icon icon-name="layers" @click="handleShowAnimations"/>
+        <svg-icon icon-name="appstore" @click="handleShowAnimations"/>
 
         <div class="widget__animations">
           <span
@@ -47,7 +47,7 @@
         v-for="animation in animations"
         :key="animation.prop"
       >
-        <svg-icon icon-name="x" @click="handleRemove(animation)" />
+        <svg-icon icon-name="close" @click="handleRemove(animation)" />
 
         <span class="widget__divider"></span>
 
@@ -62,12 +62,12 @@
 
         <svg-icon
           :class="{'widget__icon--active': animation.curve && isAnchorActive(animation.anchors)}"
-          icon-name="activity"
+          icon-name="all"
           @click="handleCurve"
         />
 
         <div class="widget__control">
-          <svg-icon icon-name="chevron-left" @click="handleLeft(animation)" />
+          <svg-icon icon-name="left" @click="handleLeft(animation)" />
 
           <span
             :class="{
@@ -77,7 +77,7 @@
             @click="handleAnchor(animation)"
           ></span>
 
-          <svg-icon icon-name="chevron-right" @click="handleRight(animation)" />
+          <svg-icon icon-name="right" @click="handleRight(animation)" />
         </div>
       </div>
     </div>
@@ -309,7 +309,7 @@ export default defineComponent({
   }
 
   svg.widget__expand {
-    font-size: 16px;
+    font-size: 12px;
     margin: 0 4px 0 0;
     cursor: pointer;
     transition: transform 150ms;
@@ -375,6 +375,10 @@ export default defineComponent({
       right: -12px;
       cursor: pointer;
       z-index: -1;
+    }
+
+    svg {
+      font-size: 14px;
     }
 
     span, svg {
@@ -450,6 +454,10 @@ export default defineComponent({
     align-items: center;
     width: 100%;
     margin-left: 6px;
+
+    svg {
+      font-size: 10px;
+    }
   }
 
   &__anchor {

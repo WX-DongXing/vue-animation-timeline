@@ -21,37 +21,37 @@ const ANIMATION_OPTIONS = {
 
 const ANIMATION_TYPES: AnimationType[] = [
   {
-    name: '宽', title: 'width', icon: 'more-horizontal', prop: 'width', desc: '', value: 0, anchors: [],
+    name: '宽', title: 'width', icon: 'column-width', prop: 'width', desc: '', value: 0, anchors: [],
   },
   {
-    name: '高', title: 'height', icon: 'more-vertical', prop: 'height', desc: '', value: 0, anchors: [],
+    name: '高', title: 'height', icon: 'colum-height', prop: 'height', desc: '', value: 0, anchors: [],
   },
   {
-    name: '水平位置', title: 'x', icon: 'move', prop: 'left', desc: 'x', value: 0, anchors: [],
+    name: '水平位置', title: 'x', icon: 'totop', prop: 'left', desc: 'x', value: 0, anchors: [],
   },
   {
-    name: '垂直位置', title: 'y', icon: 'move', prop: 'top', desc: 'y', value: 0, anchors: [],
+    name: '垂直位置', title: 'y', icon: 'totop', prop: 'top', desc: 'y', value: 0, anchors: [],
   },
   {
-    name: '水平位移', title: 'translate-x', icon: 'navigation', prop: 'translateX', desc: 'x', value: 0, anchors: [],
+    name: '水平位移', title: 'translate-x', icon: 'drag', prop: 'translateX', desc: 'x', value: 0, anchors: [],
   },
   {
-    name: '垂直位移', title: 'translate-y', icon: 'navigation', prop: 'translateY', desc: 'y', value: 0, anchors: [],
+    name: '垂直位移', title: 'translate-y', icon: 'drag', prop: 'translateY', desc: 'y', value: 0, anchors: [],
   },
   {
-    name: '纵深位移', title: 'translate-z', icon: 'navigation', prop: 'translateZ', desc: 'z', value: 0, anchors: [],
+    name: '纵深位移', title: 'translate-z', icon: 'drag', prop: 'translateZ', desc: 'z', value: 0, anchors: [],
   },
   {
-    name: '不透明度', title: 'opacity', icon: 'droplet', prop: 'opacity', desc: '', value: 1, anchors: [],
+    name: '不透明度', title: 'opacity', icon: 'bulb', prop: 'opacity', desc: '', value: 1, anchors: [],
   },
   {
-    name: '水平旋转', title: 'rotate-x', icon: 'rotate-cw', prop: 'rotateX', desc: 'x', value: 0, anchors: [],
+    name: '水平旋转', title: 'rotate-x', icon: 'rotate-right', prop: 'rotateX', desc: 'x', value: 0, anchors: [],
   },
   {
-    name: '垂直旋转', title: 'rotate-y', icon: 'rotate-cw', prop: 'rotateY', desc: 'y', value: 0, anchors: [],
+    name: '垂直旋转', title: 'rotate-y', icon: 'rotate-right', prop: 'rotateY', desc: 'y', value: 0, anchors: [],
   },
   {
-    name: '纵深旋转', title: 'rotate-z', icon: 'rotate-cw', prop: 'rotateZ', desc: 'z', value: 0, anchors: [],
+    name: '纵深旋转', title: 'rotate-z', icon: 'rotate-right', prop: 'rotateZ', desc: 'z', value: 0, anchors: [],
   },
   {
     name: '水平倾斜', title: 'skew-x', icon: 'italic', prop: 'skewX', desc: 'x', value: 0, anchors: [],
@@ -60,10 +60,10 @@ const ANIMATION_TYPES: AnimationType[] = [
     name: '垂直倾斜', title: 'skew-y', icon: 'italic', prop: 'skewY', desc: 'y', value: 0, anchors: [],
   },
   {
-    name: '水平缩放', title: 'scale-x', icon: 'maximize-2', prop: 'scaleX', desc: 'x', value: 1, anchors: [],
+    name: '水平缩放', title: 'scale-x', icon: 'arrawsalt', prop: 'scaleX', desc: 'x', value: 1, anchors: [],
   },
   {
-    name: '垂直缩放', title: 'scale-y', icon: 'maximize-2', prop: 'scaleY', desc: 'y', value: 1, anchors: [],
+    name: '垂直缩放', title: 'scale-y', icon: 'arrawsalt', prop: 'scaleY', desc: 'y', value: 1, anchors: [],
   },
 ];
 

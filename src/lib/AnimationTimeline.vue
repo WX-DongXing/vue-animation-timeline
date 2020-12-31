@@ -4,13 +4,13 @@
     <header>
       <div class="animation-timeline__icons">
         <svg-icon :icon-name="isPlay ? 'pause' : 'play'" @click="handlePlay" />
-        <svg-icon icon-name="square" @click="handleReset" />
+        <svg-icon icon-name="reload" style="font-size: 20px" @click="handleReset" />
 
         <span class="animation-timeline__divider"></span>
 
         <div class="animation-timeline__control">
-          <svg-icon icon-name="corner-up-left" @click="handleBack" />
-          <svg-icon :icon-name="isRepeat ? 'repeat' : 'shuffle'" @click="handleRepeat" />
+          <svg-icon icon-name="rollback" @click="handleBack" />
+          <svg-icon :icon-name="isRepeat ? 'sync' : 'swap-right'" @click="handleRepeat" />
         </div>
       </div>
       <!-- / icon area -->
@@ -35,7 +35,7 @@
 
           <div class="animation-timeline__sign">
             <div>
-              <svg-icon icon-name="eye-off" />
+              <svg-icon icon-name="eye-close" />
               <svg-icon icon-name="lock" />
             </div>
 
@@ -879,6 +879,7 @@ export default defineComponent({
     padding: 0 12px 0 0;
 
     svg {
+      font-size: 24px;
       cursor: pointer;
     }
 
@@ -901,6 +902,10 @@ export default defineComponent({
     justify-content: space-between;
     align-items: center;
     width: 100%;
+
+    svg {
+      font-size: 16px;
+    }
   }
 
   &__title {

@@ -1,6 +1,7 @@
 import { isVue2 } from 'vue-demi';
 import AnimationTimeline from '@/lib/AnimationTimeline.vue';
 import { AnimationDirectiveV2, AnimationDirectiveV3 } from '@/directive/AnimationDirective';
+import '@/assets/iconfont';
 
 export { AnimationTimeline };
 
