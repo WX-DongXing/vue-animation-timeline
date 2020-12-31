@@ -14,6 +14,7 @@
           background: `${widget.color}`,
         }"
       >
+        <span>{{ widget.name }}</span>
       </div>
     </div>
     <animation-timeline :widgets="widgets" :fields="fields" @onUpdate="handleUpdate" />
@@ -28,19 +29,19 @@ export default defineComponent({
     return {
       widgets: [
         {
-          key: 1, name: '明细表', y: 16, x: 16, width: 84, height: 84, color: '#6597fb',
+          key: 1, name: 'A', y: 16, x: 16, width: 84, height: 84, color: '#6597fb',
         },
         {
-          key: 2, name: '聚合表', y: 116, x: 16, width: 84, height: 84, color: '#61daac',
+          key: 2, name: 'B', y: 116, x: 16, width: 84, height: 84, color: '#61daac',
         },
         {
-          key: 3, name: '透视表', y: 216, x: 16, width: 84, height: 84, color: '#667798',
+          key: 3, name: 'C', y: 216, x: 16, width: 84, height: 84, color: '#667798',
         },
         {
-          key: 4, name: '指标卡', y: 316, x: 16, width: 84, height: 84, color: '#76cced',
+          key: 4, name: 'D', y: 316, x: 16, width: 84, height: 84, color: '#76cced',
         },
         {
-          key: 5, name: '词云图', y: 416, x: 16, width: 84, height: 84, color: '#e76b5a',
+          key: 5, name: 'E', y: 416, x: 16, width: 84, height: 84, color: '#e76b5a',
         },
       ],
       fields: {
@@ -98,7 +99,13 @@ export default defineComponent({
 }
 
 .panel {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
+  align-items: center;
   position: absolute;
   perspective: 600px;
+  color: white;
+  font-size: 32px;
 }
 </style>
