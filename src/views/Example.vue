@@ -11,10 +11,16 @@
           width: `${widget.width}px`,
           top: `${widget.y}px`,
           left: `${widget.x}px`,
-          background: `${widget.color}`,
         }"
       >
-        <span>{{ widget.name }}</span>
+        <div class="panel__side panel__font">
+          <span>{{ widget.name }}</span>
+        </div>
+        <div class="panel__side panel__back"></div>
+        <div class="panel__side panel__top"></div>
+        <div class="panel__side panel__bottom"></div>
+        <div class="panel__side panel__left"></div>
+        <div class="panel__side panel__right"></div>
       </div>
     </div>
     <animation-timeline :widgets="widgets" :fields="fields" @onUpdate="handleUpdate" />
@@ -29,19 +35,19 @@ export default defineComponent({
     return {
       widgets: [
         {
-          key: 1, name: 'A', y: 16, x: 16, width: 84, height: 84, color: '#6597fb',
+          key: 1, name: 'A', y: 32, x: 72, width: 84, height: 84,
         },
         {
-          key: 2, name: 'B', y: 116, x: 16, width: 84, height: 84, color: '#61daac',
+          key: 2, name: 'B', y: 132, x: 72, width: 84, height: 84,
         },
         {
-          key: 3, name: 'C', y: 216, x: 16, width: 84, height: 84, color: '#667798',
+          key: 3, name: 'C', y: 232, x: 72, width: 84, height: 84,
         },
         {
-          key: 4, name: 'D', y: 316, x: 16, width: 84, height: 84, color: '#76cced',
+          key: 4, name: 'D', y: 332, x: 72, width: 84, height: 84,
         },
         {
-          key: 5, name: 'E', y: 416, x: 16, width: 84, height: 84, color: '#e76b5a',
+          key: 5, name: 'E', y: 432, x: 72, width: 84, height: 84,
         },
       ],
       fields: {
@@ -61,7 +67,7 @@ export default defineComponent({
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .example {
   display: flex;
   flex-flow: column nowrap;
@@ -77,16 +83,54 @@ export default defineComponent({
   margin-bottom: 24px;
   border: 1px solid #efefef;
   overflow: auto;
+  perspective: 800px;
 }
 
 .panel {
-  display: flex;
-  flex-flow: row nowrap;
-  justify-content: center;
-  align-items: center;
   position: absolute;
-  perspective: 600px;
   color: white;
   font-size: 32px;
+  perspective: 800px;
+  transform-style: preserve-3d;
+
+  &__side {
+    position: absolute;
+    width: 84px;
+    height: 84px;
+  }
+
+  &__font {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    transform: translateZ(42px);
+    background: red;
+  }
+
+  &__back {
+    background: orange;
+    transform: translateZ(-42px);
+  }
+
+  &__top {
+    background: chartreuse;
+    transform: rotateX(90deg) translateZ(42px);
+  }
+
+  &__bottom {
+    background: blue;
+    transform: rotateX(90deg) translateZ(-42px);
+  }
+
+  &__left {
+    background: darkmagenta;
+    transform: rotateY(90deg) translateZ(-42px);
+  }
+
+  &__right {
+    background: cyan;
+    transform: rotateY(90deg) translateZ(42px);
+  }
 }
 </style>
