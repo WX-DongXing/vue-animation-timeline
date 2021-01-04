@@ -281,7 +281,7 @@ export default defineComponent({
 });
 </script>
 
-<style scoped lang="less">
+<style scoped lang="scss">
 .widget {
   position: relative;
   width: 100%;

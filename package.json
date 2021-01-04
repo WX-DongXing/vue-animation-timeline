@@ -1,16 +1,37 @@
 {
   "name": "vue-animation-timeline",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.1.8",
+  "main": "dist/vue-animation-timeline.umd.min.js",
+  "author": {
+    "name": "xingdong",
+    "email": "dong.xing@outlook.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WX-DongXing/vue-animation-timeline.git"
+  },
+  "homepage": "https://wx-dongxing.github.io/vue-animation-timeline/",
+  "keywords": [
+    "javascript",
+    "vue",
+    "vue3",
+    "timeline",
+    "animation"
+  ],
+  "files": [
+    "dist/*.js",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "build-lib": "vue-cli-service build --target lib --name vue-animation-timeline src/index.ts"
+    "build-lib": "vue-cli-service build --mode lib --target lib --name vue-animation-timeline src/index.ts"
   },
   "dependencies": {
     "@antv/g-canvas": "^0.4.15",
-    "@types/lodash.clonedeep": "^4.5.6",
     "@vue/composition-api": "^1.0.0-beta.20",
     "@vueuse/core": "^4.0.0-rc.7",
     "animejs": "^3.2.1",
@@ -26,10 +47,11 @@
   },
   "peerDependencies": {
     "@vue/composition-api": "^1.0.0-beta.20",
-    "vue": "^2.6.11 || >=3.0.0-rc.0"
+    "vue": "^2.6.11 || >=3.0.0"
   },
   "devDependencies": {
     "@types/animejs": "^3.1.2",
+    "@types/lodash.clonedeep": "^4.5.6",
     "@typescript-eslint/eslint-plugin": "^2.33.0",
     "@typescript-eslint/parser": "^2.33.0",
     "@vue/cli-plugin-babel": "~4.5.0",
@@ -42,8 +64,6 @@
     "eslint": "^6.7.2",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-vue": "^6.2.2",
-    "less": "^3.0.4",
-    "less-loader": "^5.0.0",
     "sass": "^1.32.0",
     "sass-loader": "^10.1.0",
     "svg-sprite-loader": "^5.0.0",

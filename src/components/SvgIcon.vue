@@ -5,7 +5,7 @@
  */
 
 <template>
-  <svg :class="svgClass" aria-hidden="true" v-on="$listeners">
+  <svg :class="svgClass" aria-hidden="true" v-bind="$attrs" @click="$emit('click')">
     <use :xlink:href="svgName" />
   </svg>
 </template>

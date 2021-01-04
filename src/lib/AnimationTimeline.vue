@@ -772,7 +772,7 @@ export default defineComponent({
 });
 </script>
 
-<style scoped lang="less">
+<style scoped lang="scss">
 .animation-timeline {
   display: flex;
   flex-flow: column nowrap;

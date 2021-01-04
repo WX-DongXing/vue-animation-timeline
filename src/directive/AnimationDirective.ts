@@ -1,4 +1,3 @@
-import { DirectiveOptions, VNode, VNodeDirective } from 'vue';
 import anime from 'animejs';
 import Transition from '@/models/Transition';
 import {
@@ -71,8 +70,8 @@ const animateOptions = (transition: Transition) => {
     });
 };
 
-const AnimationDirectiveV2: DirectiveOptions = {
-  inserted(el: HTMLElement, { value }: VNodeDirective, vNode: VNode) {
+const AnimationDirectiveV2: any = {
+  inserted(el: HTMLElement, { value }: any, vNode: any) {
     const { maxTime, isRepeat, animates } = (vNode.context as AnimationTimelineProp).$animateParams;
     // init animate instance
     const animate = anime.timeline({
@@ -88,7 +87,7 @@ const AnimationDirectiveV2: DirectiveOptions = {
     options.forEach(({ animateProp, time }) => animate.add(animateProp, time));
     animates.push({ key: value.key, animate });
   },
-  update(el: HTMLElement, { value }: VNodeDirective, vNode: VNode) {
+  update(el: HTMLElement, { value }: any, vNode: any) {
     const { maxTime, isRepeat, animates } = (vNode.context as AnimationTimelineProp).$animateParams;
     const target = animates.find((ani: Animate) => ani.key === value.key);
     // only need update prop
@@ -107,7 +106,7 @@ const AnimationDirectiveV2: DirectiveOptions = {
     value.transition.needUpdateProp = false;
     value.transition.needUpdateOption = false;
   },
-  unbind(el: HTMLElement, { value }: VNodeDirective, vNode: VNode) {
+  unbind(el: HTMLElement, { value }: any, vNode: any) {
     const { animates } = (vNode.context as AnimationTimelineProp).$animateParams;
     const index = animates.findIndex((ani: Animate) => ani.key === value.key);
     if (index !== -1) {
