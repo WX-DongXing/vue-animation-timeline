@@ -12,7 +12,7 @@ export default defineComponent({
 });
 </script>
 
-<style lang="less">
+<style lang="scss">
 #app {
   display: flex;
   flex-flow: column nowrap;

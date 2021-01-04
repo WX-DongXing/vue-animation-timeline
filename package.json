@@ -1,6 +1,6 @@
 {
   "name": "vue-animation-timeline",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "main": "dist/vue-animation-timeline.umd.min.js",
   "author": {
     "name": "xingdong",
