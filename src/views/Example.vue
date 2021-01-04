@@ -105,31 +105,31 @@ export default defineComponent({
     justify-content: center;
     align-items: center;
     transform: translateZ(42px);
-    background: red;
+    background: #2ec7c9;
   }
 
   &__back {
-    background: orange;
+    background: #5ab1ef;
     transform: translateZ(-42px);
   }
 
   &__top {
-    background: chartreuse;
+    background: #ffba80;
     transform: rotateX(90deg) translateZ(42px);
   }
 
   &__bottom {
-    background: blue;
+    background: #d87a80;
     transform: rotateX(90deg) translateZ(-42px);
   }
 
   &__left {
-    background: darkmagenta;
+    background: #8d99b3;
     transform: rotateY(90deg) translateZ(-42px);
   }
 
   &__right {
-    background: cyan;
+    background: #b7a2de;
     transform: rotateY(90deg) translateZ(42px);
   }
 }
