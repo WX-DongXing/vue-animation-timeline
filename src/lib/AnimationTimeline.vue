@@ -106,6 +106,7 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const instance = getCurrentInstance();
+    const ctx = instance.ctx || instance;
     const { widgets, fields } = toRefs(props);
     const { rect } = useResize();
     const fieldMap = reactive({
@@ -303,6 +304,9 @@ export default defineComponent({
         update: (params) => {
           time.value = params.progress / 100 * maxTime.value;
         },
+        complete: () => {
+          isPlay.value = false;
+        },
       }).add({ opacity: 0 });
     };
 
@@ -310,8 +314,8 @@ export default defineComponent({
       if (element.animate) {
         element.animate.duration = maxTime.value;
         element.animate.loop = isRepeat.value;
-        instance.$animateParams.maxTime = maxTime.value;
-        instance.$animateParams.isRepeat = isRepeat.value;
+        ctx.$animateParams.maxTime = maxTime.value;
+        ctx.$animateParams.isRepeat = isRepeat.value;
       }
       options.forEach((option) => {
         Object.assign(option.transition, { needUpdateProp: true });
@@ -554,10 +558,10 @@ export default defineComponent({
       isPlay.value = !isPlay.value;
       if (isPlay.value) {
         element.animate.play();
-        instance.$animate.play();
+        ctx.$animate.play();
       } else {
         element.animate.pause();
-        instance.$animate.pause();
+        ctx.$animate.pause();
       }
       emit(isPlay.value ? 'onPlay' : 'onPause');
     };
@@ -568,7 +572,7 @@ export default defineComponent({
       setTimeout(() => {
         isPlay.value = true;
         element.animate.restart();
-        instance.$animate.restart();
+        ctx.$animate.restart();
         emit('onRestart');
       });
     };
@@ -576,8 +580,8 @@ export default defineComponent({
     const handleBack = () => {
       isPlay.value = false;
       time.value = 0;
-      instance.$animate.pause();
-      instance.$animate.seek(0);
+      ctx.$animate.pause();
+      ctx.$animate.seek(0);
       element.animate.pause();
       element.animate.seek(0);
       emit('onPause');

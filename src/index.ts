@@ -46,18 +46,20 @@ export default {
         isRepeat: false,
       };
 
+      const { animates } = app.config.globalProperties.$animateParams;
+
       app.config.globalProperties.$animate = {
         play: () => {
-          app.config.globalProperties.$animateParams.animates.forEach(({ animate }: any) => animate.play());
+          animates.forEach(({ animate }: any) => animate.play());
         },
         pause: () => {
-          app.config.globalProperties.$animateParams.animates.forEach(({ animate }: any) => animate.pause());
+          animates.forEach(({ animate }: any) => animate.pause());
         },
         restart: () => {
-          app.config.globalProperties.$animateParams.animates.forEach(({ animate }: any) => animate.restart());
+          animates.forEach(({ animate }: any) => animate.restart());
         },
         seek: (timeStamp: number) => {
-          app.config.globalProperties.$animateParams.animates.forEach(({ animate }: any) => animate.seek(timeStamp));
+          animates.forEach(({ animate }: any) => animate.seek(timeStamp));
         },
       };
     }

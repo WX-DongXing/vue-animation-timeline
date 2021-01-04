@@ -83,14 +83,14 @@ export default defineComponent({
   margin-bottom: 24px;
   border: 1px solid #efefef;
   overflow: auto;
-  perspective: 800px;
+  perspective: 1200px;
 }
 
 .panel {
   position: absolute;
   color: white;
   font-size: 32px;
-  perspective: 800px;
+  perspective: 1200px;
   transform-style: preserve-3d;
 
   &__side {
