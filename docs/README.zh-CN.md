@@ -147,6 +147,7 @@ export default defineComponent({
 
 | 属性     | 描述                  |
 |--------|---------------------|
+| key    | 唯一标识符                |
 | name   | 元素名称，默认为 'name'                |
 | width  | 元素宽度字段映射，默认为 'width'     |
 | height | 元素高度字段映射，默认为 'width'     |

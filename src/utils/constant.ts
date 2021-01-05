@@ -68,6 +68,7 @@ const ANIMATION_TYPES: AnimationType[] = [
 ];
 
 const DEFAULT_FIELDS = {
+  key: 'key',
   name: 'name',
   width: 'width',
   height: 'height',

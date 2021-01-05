@@ -147,6 +147,7 @@ export default defineComponent({
 
 | Properties     | Description                  |
 |--------|---------------------|
+| key    | Unique identifier                |
 | name   | Name field mapping，default 'name'                |
 | width  | Width field mapping，default 'width'     |
 | height | Width field mapping，default 'width'     |

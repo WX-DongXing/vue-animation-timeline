@@ -29,7 +29,7 @@ export default class Transition {
     this.height = widget[fieldMap.height];
     this.left = widget[fieldMap.left] || 0;
     this.top = widget[fieldMap.top] || 0;
-    this.animations = widget.animations || [];
+    this.animations = widget.transition ? (widget.transition.animations || []) : [];
     this.isExpanded = false;
     this.visible = true;
     this.isLocked = false;

@@ -51,6 +51,7 @@ export default defineComponent({
         },
       ],
       fields: {
+        key: 'key',
         name: 'name',
         width: 'width',
         height: 'height',
