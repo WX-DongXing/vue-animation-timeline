@@ -18,7 +18,7 @@
 
 ## ✨ 特性
 
-- 🚀 基于时间轴到可视化元素动画配置
+- 🚀 基于时间轴的可视化元素动画配置
 - 💫 支持 CSS Transform 动画属性
 - ✅ 兼容 vue2.x 以及 vue3
 
@@ -168,4 +168,5 @@ export default defineComponent({
 
 ## 证书
 [MIT](http://opensource.org/licenses/MIT)
+
 Copyright (c) 2021 Dong Xing

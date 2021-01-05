@@ -168,4 +168,5 @@ export default defineComponent({
 
 ## License
 [MIT](http://opensource.org/licenses/MIT)
+
 Copyright (c) 2021 Dong Xing

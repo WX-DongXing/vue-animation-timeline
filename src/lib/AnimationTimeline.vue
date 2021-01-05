@@ -74,7 +74,7 @@ import anime from 'animejs';
 import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
-  defineComponent, onMounted, ref, getCurrentInstance,
+  defineComponent, onMounted, getCurrentInstance,
   reactive, computed, onUnmounted, toRefs,
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
@@ -118,31 +118,31 @@ export default defineComponent({
       )),
     );
 
-    const time = ref(0);
-    const startTime = ref(0);
-    const calcStartTime = ref(0);
-    const endTime = ref(10000);
-    const calcEndTime = ref(10000);
-    const maxTime = ref(10000);
-    const isPlay = ref(false);
-    const isRepeat = ref(false);
-
-    let painter = ref();
-    let timeRect = ref();
-    let timelineRect = ref();
-    let leftPoint = ref();
-    let centerBar = ref();
-    let rightPoint = ref();
-    let playBarTriangle = ref();
-    let playBarLine = ref();
-    let timelineAxis = ref();
-    let timelineGroup = ref();
-    const axisTicks = ref([]);
-
-    const container = ref();
+    const state = reactive({
+      time: 0,
+      startTime: 0,
+      calcStartTime: 0,
+      endTime: 10000,
+      calcEndTime: 10000,
+      maxTime: 10000,
+      isPlay: false,
+      isRepeat: false,
+      container: null,
+    });
 
     const element = reactive({
       animate: null,
+      painter: null,
+      timeRect: null,
+      timelineRect: null,
+      leftPoint: null,
+      centerBar: null,
+      rightPoint: null,
+      playBarTriangle: null,
+      playBarLine: null,
+      timelineAxis: null,
+      timelineGroup: null,
+      axisTicks: [],
     });
 
     const record = reactive({
@@ -159,27 +159,28 @@ export default defineComponent({
       allowPlayBarMove: false,
     });
 
-    const unitTickCount = computed(() => Math.trunc(maxTime.value / 1000));
-    const unitLength = computed(() => (rect.width - 20) / maxTime.value);
+    const unitTickCount = computed(() => Math.trunc(state.maxTime / 1000));
+    const unitLength = computed(() => (rect.width - 20) / state.maxTime);
     const unitSecondLength = computed(() => unitLength.value * 1000);
     const calcMaxTime = computed(
-      () => maxTime.value / ((endTime.value - startTime.value) / maxTime.value),
+      () => state.maxTime / ((state.endTime - state.startTime) / state.maxTime),
     );
-    const scaleRate = computed(() => (endTime.value - startTime.value) / maxTime.value);
-    const timeScale = computed(() => dayjs(time.value).format('mm:ss:SSS'));
+    const scaleRate = computed(() => (state.endTime - state.startTime) / state.maxTime);
+    const timeScale = computed(() => dayjs(state.time).format('mm:ss:SSS'));
     const maxTimeScale = computed({
-      get: () => dayjs(maxTime.value).format('mm:ss:SSS'),
+      get: () => dayjs(state.maxTime).format('mm:ss:SSS'),
       set: (val) => {
         const pattern = /^([0-5][0-9]):([0-5][0-9]):([0-9][0-9][0-9])$/;
         if (pattern.test(val)) {
           const [, mm, ss, SSS] = val.match(pattern);
           const maxTimeValue = +mm * 60 * 1000 + +ss * 1000 + +SSS;
-          maxTime.value = maxTimeValue;
-          if (+maxTimeValue <= endTime.value) {
-            if (startTime.value >= +maxTimeValue) {
-              startTime.value = 0;
+          state.maxTime = maxTimeValue;
+          console.log(state.maxTime);
+          if (+maxTimeValue <= state.endTime) {
+            if (state.startTime >= +maxTimeValue) {
+              state.startTime = 0;
             }
-            endTime.value = +maxTimeValue || 1000;
+            state.endTime = +maxTimeValue || 1000;
           }
         }
       },
@@ -188,15 +189,15 @@ export default defineComponent({
     const initCanvas = () => {
       const { width, height } = document.getElementById('painter').getBoundingClientRect();
       // init painter
-      painter = new Canvas({
+      element.painter = new Canvas({
         container: 'painter',
         width,
         height,
       });
 
-      timelineGroup = painter.addGroup();
+      element.timelineGroup = element.painter.addGroup();
 
-      timeRect = painter.addShape('rect', {
+      element.timeRect = element.painter.addShape('rect', {
         name: 'timeBar',
         attrs: {
           x: 0,
@@ -207,7 +208,7 @@ export default defineComponent({
         },
       });
 
-      leftPoint = painter.addShape('circle', {
+      element.leftPoint = element.painter.addShape('circle', {
         attrs: {
           x: 10,
           y: 10,
@@ -218,7 +219,7 @@ export default defineComponent({
         },
       });
 
-      rightPoint = painter.addShape('circle', {
+      element.rightPoint = element.painter.addShape('circle', {
         attrs: {
           x: width - 10,
           y: 10,
@@ -229,7 +230,7 @@ export default defineComponent({
         },
       });
 
-      centerBar = painter.addShape('rect', {
+      element.centerBar = element.painter.addShape('rect', {
         name: 'timeBar',
         attrs: {
           x: 10,
@@ -242,7 +243,7 @@ export default defineComponent({
         },
       });
 
-      timelineRect = painter.addShape('rect', {
+      element.timelineRect = element.painter.addShape('rect', {
         name: 'timelineBar',
         attrs: {
           x: 0,
@@ -253,7 +254,7 @@ export default defineComponent({
         },
       });
 
-      playBarTriangle = painter.addShape('marker', {
+      element.playBarTriangle = element.painter.addShape('marker', {
         name: 'playBarTriangle',
         attrs: {
           x: 10,
@@ -266,7 +267,7 @@ export default defineComponent({
         },
       });
 
-      playBarLine = painter.addShape('line', {
+      element.playBarLine = element.painter.addShape('line', {
         name: 'playBarLine',
         attrs: {
           x1: 10,
@@ -279,7 +280,7 @@ export default defineComponent({
         },
       });
 
-      timelineAxis = painter.addShape('line', {
+      element.timelineAxis = element.painter.addShape('line', {
         name: 'playBarLine',
         attrs: {
           x1: 10,
@@ -296,26 +297,26 @@ export default defineComponent({
     const initAnimate = () => {
       element.animate = anime.timeline({
         delay: 0,
-        duration: maxTime.value || 10000,
+        duration: state.maxTime || 10000,
         direction: 'normal',
         easing: 'linear',
-        loop: isRepeat,
+        loop: state.isRepeat,
         autoplay: false,
         update: (params) => {
-          time.value = params.progress / 100 * maxTime.value;
+          state.time = params.progress / 100 * state.maxTime;
         },
         complete: () => {
-          isPlay.value = false;
+          state.isPlay = false;
         },
       }).add({ opacity: 0 });
     };
 
     const setAnimateOption = () => {
       if (element.animate) {
-        element.animate.duration = maxTime.value;
-        element.animate.loop = isRepeat.value;
-        ctx.$animateParams.maxTime = maxTime.value;
-        ctx.$animateParams.isRepeat = isRepeat.value;
+        element.animate.duration = state.maxTime;
+        element.animate.loop = state.isRepeat;
+        ctx.$animateParams.maxTime = state.maxTime;
+        ctx.$animateParams.isRepeat = state.isRepeat;
       }
       options.forEach((option) => {
         Object.assign(option.transition, { needUpdateProp: true });
@@ -326,16 +327,16 @@ export default defineComponent({
     const resizeDecorate = () => {
       const { width, height } = rect;
       // change painter size
-      painter.changeSize(width, height);
+      element.painter.changeSize(width, height);
 
       // set time rect width
-      timeRect.attr('width', width);
+      element.timeRect.attr('width', width);
 
       // set timeline rect width
-      timelineRect.attr('width', width);
+      element.timelineRect.attr('width', width);
 
       // set time line axis width
-      timelineAxis.animate({
+      element.timelineAxis.animate({
         x1: 10,
         y1: 48,
         x2: width - 10,
@@ -345,22 +346,22 @@ export default defineComponent({
 
     const resizeScaleBar = () => {
       const { width } = rect;
-      const unitWidth = (width - 20) / maxTime.value;
-      record.leftPosition = startTime.value * unitWidth + 10;
-      record.rightPosition = endTime.value * unitWidth + 10;
+      const unitWidth = (width - 20) / state.maxTime;
+      record.leftPosition = state.startTime * unitWidth + 10;
+      record.rightPosition = state.endTime * unitWidth + 10;
 
       // set left point x position
-      leftPoint.animate({
+      element.leftPoint.animate({
         x: record.leftPosition,
       }, ANIMATION_OPTIONS);
 
       // set right point x position
-      rightPoint.animate({
+      element.rightPoint.animate({
         x: record.rightPosition,
       }, ANIMATION_OPTIONS);
 
       // set center bar width, x
-      centerBar.animate({
+      element.centerBar.animate({
         width: record.rightPosition - record.leftPosition,
         x: record.leftPosition,
       }, ANIMATION_OPTIONS);
@@ -369,31 +370,31 @@ export default defineComponent({
     const resizePlayBar = () => {
       const { width, height } = rect;
       // set play bar triangle x
-      playBarTriangle.animate({
-        x: ((width - 20) / maxTime.value) * time.value / scaleRate.value + 10 - record.offset,
+      element.playBarTriangle.animate({
+        x: ((width - 20) / state.maxTime) * state.time / scaleRate.value + 10 - record.offset,
       }, ANIMATION_OPTIONS);
 
       // set play bar line x
-      playBarLine.animate({
-        x1: ((width - 20) / maxTime.value) * time.value / scaleRate.value + 10 - record.offset,
+      element.playBarLine.animate({
+        x1: ((width - 20) / state.maxTime) * state.time / scaleRate.value + 10 - record.offset,
         y1: 30,
-        x2: ((width - 20) / maxTime.value) * time.value / scaleRate.value + 10 - record.offset,
+        x2: ((width - 20) / state.maxTime) * state.time / scaleRate.value + 10 - record.offset,
         y2: height,
       }, ANIMATION_OPTIONS);
     };
 
     const calcEffect = () => {
-      record.offset = (rect.width - 20) / scaleRate.value * (startTime.value / maxTime.value);
+      record.offset = (rect.width - 20) / scaleRate.value * (state.startTime / state.maxTime);
       const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
-      calcStartTime.value = startTime.value * scaleRate.value + timeBuffer;
-      calcEndTime.value = endTime.value * scaleRate.value + timeBuffer;
+      state.calcStartTime = state.startTime * scaleRate.value + timeBuffer;
+      state.calcEndTime = state.endTime * scaleRate.value + timeBuffer;
     };
 
     const drawTick = () => {
-      axisTicks.value.forEach((axis) => {
+      element.axisTicks.forEach((axis) => {
         axis.remove(true);
       });
-      axisTicks.value = [];
+      element.axisTicks = [];
 
       for (const index in new Array(unitTickCount.value + 1).fill(null)) {
         const min = unitSecondLength.value / scaleRate.value <= TICK_MIN_LENGTH;
@@ -402,7 +403,7 @@ export default defineComponent({
         if (min && minCount > 0 && index % (minCount * 2) !== 0 && +index !== +unitTickCount.value) {
           continue;
         }
-        const axisTick = painter.addShape('line', {
+        const axisTick = element.painter.addShape('line', {
           name: 'axisTick',
           attrs: {
             x1: 10 + (index * unitSecondLength.value) / scaleRate.value - record.offset,
@@ -414,7 +415,7 @@ export default defineComponent({
           },
         });
 
-        const axisText = painter.addShape('text', {
+        const axisText = element.painter.addShape('text', {
           attrs: {
             x: (index >= 10 ? 0 : 5) + (
               index * unitSecondLength.value
@@ -429,7 +430,7 @@ export default defineComponent({
 
         let smallAxisTick = [];
         if (max) {
-          smallAxisTick = new Array(6).fill(null).map((__, i) => painter.addShape('line', {
+          smallAxisTick = new Array(6).fill(null).map((__, i) => element.painter.addShape('line', {
             name: 'axisTick',
             attrs: {
               x1: 10 + (
@@ -446,19 +447,19 @@ export default defineComponent({
           }));
         }
 
-        axisTicks.value.push(...[axisTick, axisText, ...smallAxisTick]);
+        element.axisTicks.push(...[axisTick, axisText, ...smallAxisTick]);
       }
     };
 
     // set play bar to front
     const setPlayBarToFront = () => {
-      playBarTriangle.toFront();
-      playBarLine.toFront();
+      element.playBarTriangle.toFront();
+      element.playBarLine.toFront();
     };
 
     const drawAnchors = () => {
       // clear timeline group all children
-      timelineGroup.clear();
+      element.timelineGroup.clear();
       const { width } = rect;
       const reduceList = options.reduce((acc, cur, index, array) => {
         const pre = array[index - 1];
@@ -475,7 +476,7 @@ export default defineComponent({
         const allAnchors = animations.flatMap((animation) => animation.anchors);
         const overviewAnchors = Array.from(new Set(allAnchors.map((anchor) => anchor.time)));
         const { totalList } = reduceList;
-        timelineGroup.addShape('rect', {
+        element.timelineGroup.addShape('rect', {
           name: 'anchorRect',
           attrs: {
             x: 0,
@@ -485,7 +486,7 @@ export default defineComponent({
             fill: 'white',
           },
         });
-        timelineGroup.addShape('line', {
+        element.timelineGroup.addShape('line', {
           name: 'anchorRectLine',
           attrs: {
             x1: 0,
@@ -498,10 +499,10 @@ export default defineComponent({
         });
         if (overviewAnchors.length > 0) {
           overviewAnchors.forEach((anchor) => {
-            timelineGroup.addShape('marker', {
+            element.timelineGroup.addShape('marker', {
               name: 'anchor',
               attrs: {
-                x: ((width - 20) / maxTime.value) * anchor / scaleRate.value + 10 - record.offset,
+                x: ((width - 20) / state.maxTime) * anchor / scaleRate.value + 10 - record.offset,
                 y: (57 + i * 33) + 16 + (totalList[i] * 32) - record.scroll,
                 r: 5,
                 fill: '#1890FF',
@@ -513,7 +514,7 @@ export default defineComponent({
         }
         if (isExpanded && animations.length > 0) {
           animations.forEach((animation, j) => {
-            timelineGroup.addShape('rect', {
+            element.timelineGroup.addShape('rect', {
               name: 'insideAnchorRect',
               attrs: {
                 x: 0,
@@ -523,7 +524,7 @@ export default defineComponent({
                 fill: 'whitesmoke',
               },
             });
-            timelineGroup.addShape('line', {
+            element.timelineGroup.addShape('line', {
               name: 'insideAnchorRectLine',
               attrs: {
                 x1: 0,
@@ -535,11 +536,11 @@ export default defineComponent({
               },
             });
             animation.anchors.forEach((anchor) => {
-              timelineGroup.addShape('marker', {
+              element.timelineGroup.addShape('marker', {
                 name: 'anchor',
                 id: 'hi-anchor',
                 attrs: {
-                  x: ((width - 20) / maxTime.value) * anchor.time / scaleRate.value + 10 - record.offset,
+                  x: ((width - 20) / state.maxTime) * anchor.time / scaleRate.value + 10 - record.offset,
                   y: (56.5 + i * 33 + 32) + (totalList[i] * 32) + (j * 32) + (16) - record.scroll,
                   r: 5,
                   fill: 'black',
@@ -555,22 +556,22 @@ export default defineComponent({
     };
 
     const handlePlay = () => {
-      isPlay.value = !isPlay.value;
-      if (isPlay.value) {
+      state.isPlay = !state.isPlay;
+      if (state.isPlay) {
         element.animate.play();
         ctx.$animate.play();
       } else {
         element.animate.pause();
         ctx.$animate.pause();
       }
-      emit(isPlay.value ? 'onPlay' : 'onPause');
+      emit(state.isPlay ? 'onPlay' : 'onPause');
     };
 
     const handleReset = () => {
-      isPlay.value = false;
-      time.value = 0;
+      state.isPlay = false;
+      state.time = 0;
       setTimeout(() => {
-        isPlay.value = true;
+        state.isPlay = true;
         element.animate.restart();
         ctx.$animate.restart();
         emit('onRestart');
@@ -578,8 +579,8 @@ export default defineComponent({
     };
 
     const handleBack = () => {
-      isPlay.value = false;
-      time.value = 0;
+      state.isPlay = false;
+      state.time = 0;
       ctx.$animate.pause();
       ctx.$animate.seek(0);
       element.animate.pause();
@@ -589,12 +590,12 @@ export default defineComponent({
     };
 
     const handleRepeat = () => {
-      isRepeat.value = !isRepeat.value;
+      state.isRepeat = !state.isRepeat;
       handleReset();
     };
 
     const handleTimeUpdate = (t) => {
-      time.value = t;
+      state.time = t;
     };
 
     const handleUpdate = () => {
@@ -605,19 +606,19 @@ export default defineComponent({
 
     const onLeftPointMouseDown = () => {
       record.allowLeftMove = true;
-      record.startTime = startTime.value;
+      record.startTime = state.startTime;
     };
 
     const onRightPointMouseDown = () => {
       record.allowRightMove = true;
-      record.endTime = endTime.value;
+      record.endTime = state.endTime;
     };
 
     const onCenterBarMouseDown = ({ x }) => {
       record.allowCenterMove = true;
-      record.startTime = startTime.value;
+      record.startTime = state.startTime;
       record.centerAnchor = x;
-      record.endTime = endTime.value;
+      record.endTime = state.endTime;
     };
 
     const onAllowPlayBarMove = () => {
@@ -628,13 +629,13 @@ export default defineComponent({
       // left point moving
       if (record.allowLeftMove && x >= 10 && x <= record.rightPosition - OFFSET) {
         const rate = (x - 10) / (rect.width - 20);
-        startTime.value = maxTime.value * rate;
+        state.startTime = state.maxTime * rate;
       }
 
       // right point moving
       if (record.allowRightMove && x <= rect.width - 10 && x >= record.leftPosition + OFFSET) {
         const rate = (x - 10) / (rect.width - 20);
-        endTime.value = maxTime.value * rate;
+        state.endTime = state.maxTime * rate;
       }
 
       // center rect moving
@@ -644,32 +645,32 @@ export default defineComponent({
         && Math.floor(record.rightPosition) <= Math.floor(rect.width - 10)
       ) {
         const distanceDiff = x - record.centerAnchor;
-        const timeDiff = (distanceDiff / (rect.width - 20)) * maxTime.value;
+        const timeDiff = (distanceDiff / (rect.width - 20)) * state.maxTime;
         if (record.startTime + timeDiff <= 0) {
-          startTime.value = 0;
-          endTime.value = record.endTime - record.startTime;
+          state.startTime = 0;
+          state.endTime = record.endTime - record.startTime;
           return false;
         }
-        if (record.endTime + timeDiff >= maxTime.value) {
-          startTime.value = maxTime.value - (record.endTime - record.startTime);
-          endTime.value = maxTime.value;
+        if (record.endTime + timeDiff >= state.maxTime) {
+          state.startTime = state.maxTime - (record.endTime - record.startTime);
+          state.endTime = state.maxTime;
           return false;
         }
-        startTime.value = record.startTime + timeDiff;
-        endTime.value = record.endTime + timeDiff;
+        state.startTime = record.startTime + timeDiff;
+        state.endTime = record.endTime + timeDiff;
       }
 
       // play bar moving
       if (record.allowPlayBarMove && x >= 10 && x <= rect.width - 10) {
-        const rate = maxTime.value / ((rect.width - 20) / scaleRate.value);
+        const rate = state.maxTime / ((rect.width - 20) / scaleRate.value);
         const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
-        time.value = rate * (x - 10) + timeBuffer;
+        state.time = rate * (x - 10) + timeBuffer;
       }
       return false;
     };
 
     const onMarkerMouseDown = () => {
-      painter.on('anchor:mousedown', (event) => {
+      element.painter.on('anchor:mousedown', (event) => {
         console.log(event, event.target.get('id'));
       });
     };
@@ -687,27 +688,27 @@ export default defineComponent({
     };
 
     const addEvents = () => {
-      leftPoint.on('mousedown', onLeftPointMouseDown);
-      rightPoint.on('mousedown', onRightPointMouseDown);
-      centerBar.on('mousedown', onCenterBarMouseDown);
-      playBarTriangle.on('mousedown', onAllowPlayBarMove);
-      playBarLine.on('mousedown', onAllowPlayBarMove);
-      timelineRect.on('mousedown', onAllowPlayBarMove);
-      painter.on('mousemove', onPainterMouseMove);
+      element.leftPoint.on('mousedown', onLeftPointMouseDown);
+      element.rightPoint.on('mousedown', onRightPointMouseDown);
+      element.centerBar.on('mousedown', onCenterBarMouseDown);
+      element.playBarTriangle.on('mousedown', onAllowPlayBarMove);
+      element.playBarLine.on('mousedown', onAllowPlayBarMove);
+      element.timelineRect.on('mousedown', onAllowPlayBarMove);
+      element.painter.on('mousemove', onPainterMouseMove);
       onMarkerMouseDown();
-      container.value.addEventListener('scroll', onContainerScroll);
+      state.container.addEventListener('scroll', onContainerScroll);
       document.addEventListener('mouseup', onStopMoving);
     };
 
     const removeEvents = () => {
-      leftPoint.off('mousedown', onLeftPointMouseDown);
-      rightPoint.off('mousedown', onRightPointMouseDown);
-      centerBar.off('mousedown', onCenterBarMouseDown);
-      playBarTriangle.off('mousedown', onAllowPlayBarMove);
-      playBarLine.off('mousedown', onAllowPlayBarMove);
-      timelineRect.off('mousedown', onAllowPlayBarMove);
-      painter.off('mousemove', onPainterMouseMove);
-      container.value.removeEventListener('scroll', onContainerScroll);
+      element.leftPoint.off('mousedown', onLeftPointMouseDown);
+      element.rightPoint.off('mousedown', onRightPointMouseDown);
+      element.centerBar.off('mousedown', onCenterBarMouseDown);
+      element.playBarTriangle.off('mousedown', onAllowPlayBarMove);
+      element.playBarLine.off('mousedown', onAllowPlayBarMove);
+      element.timelineRect.off('mousedown', onAllowPlayBarMove);
+      element.painter.off('mousemove', onPainterMouseMove);
+      state.container.removeEventListener('scroll', onContainerScroll);
       document.removeEventListener('mouseup', onStopMoving);
     };
 
@@ -721,7 +722,7 @@ export default defineComponent({
       setPlayBarToFront();
     }, { throttle: 16 });
 
-    throttledWatch([startTime, endTime, maxTime], () => {
+    throttledWatch(() => ([state.startTime, state.endTime, state.maxTime]), () => {
       calcEffect();
       resizeScaleBar();
       resizePlayBar();
@@ -730,11 +731,13 @@ export default defineComponent({
       setPlayBarToFront();
     }, { throttle: 16 });
 
-    throttledWatch(time, () => {
+    throttledWatch(() => state.time, () => {
       resizePlayBar();
     }, { throttle: 16 });
 
-    throttledWatch([isRepeat, maxTimeScale], setAnimateOption);
+    throttledWatch(() => ([state.isRepeat, state.maxTime]), () => {
+      setAnimateOption();
+    }, { throttle: 16 });
 
     onMounted(() => {
       initCanvas();
@@ -747,19 +750,11 @@ export default defineComponent({
     });
 
     return {
-      time,
-      startTime,
-      endTime,
-      maxTime,
+      ...toRefs(state),
       scaleRate,
       timeScale,
       maxTimeScale,
-      calcStartTime,
-      calcEndTime,
       calcMaxTime,
-      isPlay,
-      isRepeat,
-      container,
       options,
       handlePlay,
       handleReset,
