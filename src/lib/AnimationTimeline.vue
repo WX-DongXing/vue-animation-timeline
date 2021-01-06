@@ -175,7 +175,6 @@ export default defineComponent({
           const [, mm, ss, SSS] = val.match(pattern);
           const maxTimeValue = +mm * 60 * 1000 + +ss * 1000 + +SSS;
           state.maxTime = maxTimeValue;
-          console.log(state.maxTime);
           if (+maxTimeValue <= state.endTime) {
             if (state.startTime >= +maxTimeValue) {
               state.startTime = 0;
@@ -769,10 +768,8 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .animation-timeline {
-  display: flex;
-  flex-flow: column nowrap;
   width: 100%;
-  min-height: 380px;
+  height: 100%;
   overflow: hidden;
   border: 1px solid #cccccc;
   border-top: none;

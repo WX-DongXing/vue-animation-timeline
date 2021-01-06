@@ -23,7 +23,7 @@
         <div class="panel__side panel__right"></div>
       </div>
     </div>
-    <animation-timeline :widgets="widgets" :fields="fields" @onUpdate="handleUpdate" />
+    <animation-timeline style="height: 500px" :widgets="widgets" :fields="fields" @onUpdate="handleUpdate" />
   </div>
 </template>
 
