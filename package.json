@@ -1,6 +1,6 @@
 {
   "name": "vue-animation-timeline",
-  "version": "0.1.10",
+  "version": "0.2.1",
   "main": "dist/vue-animation-timeline.umd.min.js",
   "author": {
     "name": "xingdong",
@@ -28,7 +28,8 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "build-lib": "vue-cli-service build --mode lib --target lib --name vue-animation-timeline src/index.ts"
+    "build-lib": "vue-cli-service build --mode lib --target lib --name vue-animation-timeline src/index.ts",
+    "build-lib3": "yarn add vue@next vue-demi && yarn add @vue/compiler-sfc -D && yarn build-lib"
   },
   "dependencies": {
     "@antv/g-canvas": "^0.4.15",
@@ -40,9 +41,7 @@
     "lodash.clonedeep": "^4.5.0",
     "normalize.css": "^8.0.1",
     "vue": "^2.6.11",
-    "vue-class-component": "^7.2.3",
     "vue-demi": "^0.4.5",
-    "vue-property-decorator": "^8.4.2",
     "vue-router": "^3.4.9"
   },
   "peerDependencies": {

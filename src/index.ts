@@ -7,7 +7,7 @@ export { AnimationTimeline };
 
 export default {
   install: (app: any) => {
-    app.component(AnimationTimeline.name, AnimationTimeline);
+    app.component('AnimationTimeline', AnimationTimeline);
     app.directive(
       'animation', isVue2 ? AnimationDirectiveV2 : AnimationDirectiveV3,
     );
