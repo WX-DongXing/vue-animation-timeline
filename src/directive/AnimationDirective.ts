@@ -72,7 +72,9 @@ const animateOptions = (transition: Transition) => {
 
 const AnimationDirectiveV2: any = {
   inserted(el: HTMLElement, { value }: any, vNode: any) {
-    const { maxTime, isRepeat, animates } = (vNode.context as AnimationTimelineProp).$animateParams;
+    const {
+      maxTime, isRepeat, animates, keyField,
+    } = (vNode.context as AnimationTimelineProp).$animateParams;
     // init animate instance
     const animate = anime.timeline({
       targets: el,
@@ -85,11 +87,17 @@ const AnimationDirectiveV2: any = {
     });
     const options = animateOptions(value.transition || {});
     options.forEach(({ animateProp, time }) => animate.add(animateProp, time));
-    animates.push({ key: value.key, animate });
+    animates.push({ key: value[keyField], animate });
   },
   update(el: HTMLElement, { value }: any, vNode: any) {
-    const { maxTime, isRepeat, animates } = (vNode.context as AnimationTimelineProp).$animateParams;
-    const target = animates.find((ani: Animate) => ani.key === value.key);
+    const {
+      maxTime, isRepeat, animates, keyField,
+    } = (vNode.context as AnimationTimelineProp).$animateParams;
+
+    const target = animates.find((ani: Animate) => ani.key === value[keyField]);
+
+    if (!value.transition || !target) return;
+
     // only need update prop
     if (target && value.transition.needUpdateProp) {
       target.animate.duration = maxTime;
@@ -107,8 +115,8 @@ const AnimationDirectiveV2: any = {
     value.transition.needUpdateOption = false;
   },
   unbind(el: HTMLElement, { value }: any, vNode: any) {
-    const { animates } = (vNode.context as AnimationTimelineProp).$animateParams;
-    const index = animates.findIndex((ani: Animate) => ani.key === value.key);
+    const { animates, keyField } = (vNode.context as AnimationTimelineProp).$animateParams;
+    const index = animates.findIndex((ani: Animate) => ani.key === value[keyField]);
     if (index !== -1) {
       // remove anime instance
       animates.splice(index, 1);
@@ -118,7 +126,9 @@ const AnimationDirectiveV2: any = {
 
 const AnimationDirectiveV3: any = {
   mounted(el: HTMLElement, { instance, value }: any) {
-    const { maxTime, isRepeat, animates } = instance.$animateParams;
+    const {
+      maxTime, isRepeat, animates, keyField,
+    } = instance.$animateParams;
     // init animate instance
     const animate = anime.timeline({
       targets: el,
@@ -131,12 +141,17 @@ const AnimationDirectiveV3: any = {
     });
     const options = animateOptions(value.transition || {});
     options.forEach(({ animateProp, time }) => animate.add(animateProp, time));
-    animates.push({ key: value.key, animate });
+    animates.push({ key: value[keyField], animate });
   },
   updated(el: HTMLElement, { instance, value }: any) {
-    const { maxTime, isRepeat, animates } = instance.$animateParams;
-    const target = animates.find((ani: Animate) => ani.key === value.key);
-    if (!value.transition) return;
+    const {
+      maxTime, isRepeat, animates, keyField,
+    } = instance.$animateParams;
+
+    const target = animates.find((ani: Animate) => ani.key === value[keyField]);
+
+    if (!value.transition || !target) return;
+
     // only need update prop
     if (target && value.transition.needUpdateProp) {
       target.animate.duration = maxTime;
@@ -154,8 +169,8 @@ const AnimationDirectiveV3: any = {
     value.transition.needUpdateOption = false;
   },
   unmounted(el: HTMLElement, { instance, value }: any) {
-    const { animates } = instance.$animateParams;
-    const index = animates.findIndex((ani: Animate) => ani.key === value.key);
+    const { animates, keyField } = instance.$animateParams;
+    const index = animates.findIndex((ani: Animate) => ani.key === value[keyField]);
     if (index !== -1) {
       // remove anime instance
       animates.splice(index, 1);

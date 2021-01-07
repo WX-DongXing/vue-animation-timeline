@@ -20,6 +20,8 @@ export default {
         animates: [],
         // repeat animate
         isRepeat: false,
+        // unique identification field name
+        keyField: 'key',
       };
 
       app.prototype.$animate = {

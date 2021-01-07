@@ -49,9 +49,9 @@
         <div class="animation-timeline__widgets" ref="container">
           <widget
             :time="time"
-            v-for="(option, index) in options"
+            v-for="option in options"
             :option="option"
-            :key="index"
+            :key="option[key]"
             @timeUpdate="handleTimeUpdate"
             @update="handleUpdate"
           />
@@ -117,8 +117,11 @@ export default defineComponent({
         { ...widget, transition: new Transition(widget, fieldMap) },
       )),
     );
+    // set unique identification field
+    ctx.$animateParams.keyField = fieldMap.key;
 
     const state = reactive({
+      key: fieldMap.key,
       time: 0,
       startTime: 0,
       calcStartTime: 0,
@@ -389,6 +392,7 @@ export default defineComponent({
       state.calcEndTime = state.endTime * scaleRate.value + timeBuffer;
     };
 
+    // draw timeline tick
     const drawTick = () => {
       element.axisTicks.forEach((axis) => {
         axis.remove(true);
@@ -456,6 +460,7 @@ export default defineComponent({
       element.playBarLine.toFront();
     };
 
+    // draw anchors
     const drawAnchors = () => {
       // clear timeline group all children
       element.timelineGroup.clear();

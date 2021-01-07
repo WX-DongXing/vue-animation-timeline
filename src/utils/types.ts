@@ -25,6 +25,7 @@ interface AnimationParams {
   maxTime: number;
   isRepeat: boolean;
   animates: Animate[];
+  keyField: string;
 }
 
 interface AnimationTimelineProp extends Vue {
