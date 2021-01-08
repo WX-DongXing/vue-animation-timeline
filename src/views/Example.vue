@@ -23,7 +23,6 @@
         <div class="panel__side panel__right"></div>
       </div>
     </div>
-    <button @click="handleAdd">ADD</button>
     <animation-timeline style="height: 500px" :widgets="widgets" :fields="fields" @onUpdate="handleUpdate" />
   </div>
 </template>
@@ -34,7 +33,10 @@ import { defineComponent } from 'vue-demi';
 export default defineComponent({
   data() {
     return {
-      list: [
+      widgets: [
+        {
+          key: 1, name: 'A', y: 32, x: 72, width: 84, height: 84,
+        },
         {
           key: 2, name: 'B', y: 132, x: 72, width: 84, height: 84,
         },
@@ -46,11 +48,6 @@ export default defineComponent({
         },
         {
           key: 5, name: 'E', y: 432, x: 72, width: 84, height: 84,
-        },
-      ],
-      widgets: [
-        {
-          key: 1, name: 'A', y: 32, x: 72, width: 84, height: 84,
         },
       ],
       fields: {
@@ -66,10 +63,6 @@ export default defineComponent({
   methods: {
     handleUpdate(items: any[]) {
       this.widgets = items;
-    },
-    handleAdd() {
-      const [widget] = this.list.splice(0, 1);
-      this.widgets.push(widget);
     },
   },
 });
