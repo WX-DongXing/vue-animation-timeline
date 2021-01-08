@@ -1,3 +1,4 @@
+import get from 'lodash.get';
 import { AnimationType } from '@/utils/types.ts';
 
 export default class Transition {
@@ -24,15 +25,15 @@ export default class Transition {
   animations?: AnimationType[];
 
   constructor(widget: any, fieldMap: any) {
-    this.name = widget[fieldMap.name];
-    this.width = widget[fieldMap.width];
-    this.height = widget[fieldMap.height];
-    this.left = widget[fieldMap.left] || 0;
-    this.top = widget[fieldMap.top] || 0;
-    this.animations = widget.transition ? (widget.transition.animations || []) : [];
-    this.isExpanded = false;
-    this.visible = true;
-    this.isLocked = false;
+    this.name = get(widget, fieldMap.name);
+    this.width = get(widget, fieldMap.width);
+    this.height = get(widget, fieldMap.height);
+    this.left = get(widget, fieldMap.left) || 0;
+    this.top = get(widget, fieldMap.top) || 0;
+    this.animations = get(widget, 'transition.animations') || [];
+    this.isExpanded = get(widget, 'transition.isExpanded') || false;
+    this.visible = get(widget, 'transition.visible') || true;
+    this.isLocked = get(widget, 'transition.isLocked') || false;
     this.needUpdateProp = false;
     this.needUpdateOption = false;
   }

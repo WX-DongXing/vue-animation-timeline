@@ -1,4 +1,5 @@
 import anime from 'animejs';
+import get from 'lodash.get';
 import Transition from '@/models/Transition';
 import {
   Anchor, Animate, AnimationTimelineProp, AnimationType,
@@ -87,14 +88,14 @@ const AnimationDirectiveV2: any = {
     });
     const options = animateOptions(value.transition || {});
     options.forEach(({ animateProp, time }) => animate.add(animateProp, time));
-    animates.push({ key: value[keyField], animate });
+    animates.push({ key: get(value, keyField), animate });
   },
   update(el: HTMLElement, { value }: any, vNode: any) {
     const {
       maxTime, isRepeat, animates, keyField,
     } = (vNode.context as AnimationTimelineProp).$animateParams;
 
-    const target = animates.find((ani: Animate) => ani.key === value[keyField]);
+    const target = animates.find((ani: Animate) => ani.key === get(value, keyField));
 
     if (!value.transition || !target) return;
 
@@ -116,7 +117,7 @@ const AnimationDirectiveV2: any = {
   },
   unbind(el: HTMLElement, { value }: any, vNode: any) {
     const { animates, keyField } = (vNode.context as AnimationTimelineProp).$animateParams;
-    const index = animates.findIndex((ani: Animate) => ani.key === value[keyField]);
+    const index = animates.findIndex((ani: Animate) => ani.key === get(value, keyField));
     if (index !== -1) {
       // remove anime instance
       animates.splice(index, 1);
@@ -141,14 +142,14 @@ const AnimationDirectiveV3: any = {
     });
     const options = animateOptions(value.transition || {});
     options.forEach(({ animateProp, time }) => animate.add(animateProp, time));
-    animates.push({ key: value[keyField], animate });
+    animates.push({ key: get(value, keyField), animate });
   },
   updated(el: HTMLElement, { instance, value }: any) {
     const {
       maxTime, isRepeat, animates, keyField,
     } = instance.$animateParams;
 
-    const target = animates.find((ani: Animate) => ani.key === value[keyField]);
+    const target = animates.find((ani: Animate) => ani.key === get(value, keyField));
 
     if (!value.transition || !target) return;
 
@@ -170,7 +171,7 @@ const AnimationDirectiveV3: any = {
   },
   unmounted(el: HTMLElement, { instance, value }: any) {
     const { animates, keyField } = instance.$animateParams;
-    const index = animates.findIndex((ani: Animate) => ani.key === value[keyField]);
+    const index = animates.findIndex((ani: Animate) => ani.key === get(value, keyField));
     if (index !== -1) {
       // remove anime instance
       animates.splice(index, 1);

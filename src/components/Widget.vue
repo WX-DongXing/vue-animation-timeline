@@ -112,25 +112,25 @@ export default defineComponent({
     const { option, time } = toRefs(props);
     const animationTypes = reactive(clonedeep(ANIMATION_TYPES));
     const isShowAnimations = ref(false);
-    const name = computed(() => option.value.transition.name);
-    const visible = computed(() => option.value.transition.visible);
-    const isExpanded = computed(() => option.value.transition.isExpanded);
-    const isLocked = computed(() => option.value.transition.isLocked);
-    const animations = computed(() => option.value.transition.animations);
+    const name = computed(() => option.value.name);
+    const visible = computed(() => option.value.visible);
+    const isExpanded = computed(() => option.value.isExpanded);
+    const isLocked = computed(() => option.value.isLocked);
+    const animations = computed(() => option.value.animations);
 
     const handleShowAnimations = () => {
       isShowAnimations.value = !isShowAnimations.value;
     };
 
     const handleSelectAnimation = (animationType: AnimationType) => {
-      option.value.transition.isExpanded = true;
+      option.value.isExpanded = true;
       const target = animations.value.find(
         (animation: AnimationType) => animation.prop === animationType.prop,
       );
       if (!target) {
         const propList = ['width', 'height', 'top', 'left'];
         if (propList.includes(animationType.prop)) {
-          Object.assign(animationType, { value: option.value.transition[animationType.prop] });
+          Object.assign(animationType, { value: option.value[animationType.prop] });
         }
         animations.value.push(reactive(animationType));
       } else {
@@ -139,27 +139,27 @@ export default defineComponent({
         );
         animations.value.splice(index, 1);
       }
-      option.value.transition.needUpdateOption = true;
+      option.value.needUpdateOption = true;
       emit('update');
     };
 
     const isActive = (prop: string) => animations.value.find((animation: AnimationType) => animation.prop === prop);
 
     const handleVisible = () => {
-      option.value.transition.visible = !option.value.transition.visible;
-      option.value.transition.needUpdateOption = true;
+      option.value.visible = !option.value.visible;
+      option.value.needUpdateOption = true;
       emit('update');
     };
 
     const handleLocked = () => {
-      option.value.transition.isLocked = !option.value.transition.isLocked;
-      option.value.transition.needUpdateOption = true;
+      option.value.isLocked = !option.value.isLocked;
+      option.value.needUpdateOption = true;
       emit('update');
     };
 
     const handleExpanded = () => {
-      option.value.transition.isExpanded = !option.value.transition.isExpanded;
-      option.value.transition.needUpdateOption = true;
+      option.value.isExpanded = !option.value.isExpanded;
+      option.value.needUpdateOption = true;
       emit('update');
     };
 
@@ -168,7 +168,7 @@ export default defineComponent({
       const defaultAnimationType = ANIMATION_TYPES.find((animationType) => animationType.prop === animations.value[index].type);
       Object.assign(animations.value[index], defaultAnimationType);
       animations.value.splice(index, 1);
-      option.value.transition.needUpdateOption = true;
+      option.value.needUpdateOption = true;
       emit('update');
     };
 
@@ -182,7 +182,7 @@ export default defineComponent({
         const anchor: Anchor = anchors[index];
         anchors.splice(index, 1, { ...anchor, value: +target.value });
       }
-      option.value.transition.needUpdateOption = true;
+      option.value.needUpdateOption = true;
       emit('update');
     };
 
@@ -249,7 +249,7 @@ export default defineComponent({
       } else {
         anchors.splice(index, 1);
       }
-      option.value.transition.needUpdateOption = true;
+      option.value.needUpdateOption = true;
       emit('update');
     };
 

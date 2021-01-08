@@ -50,7 +50,7 @@
           <widget
             :time="time"
             v-for="option in options"
-            :option="option"
+            :option="option.transition"
             :key="option[key]"
             @timeUpdate="handleTimeUpdate"
             @update="handleUpdate"
@@ -75,7 +75,8 @@ import dayjs from 'dayjs';
 import { Canvas } from '@antv/g-canvas';
 import {
   defineComponent, onMounted, getCurrentInstance,
-  reactive, computed, onUnmounted, toRefs,
+  reactive, computed, onUnmounted, toRefs, watch,
+  ref,
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
 import clonedeep from 'lodash.clonedeep';
@@ -112,11 +113,17 @@ export default defineComponent({
     const fieldMap = reactive({
       ...DEFAULT_FIELDS, ...fields.value,
     });
-    const options = reactive(
-      clonedeep(widgets.value).map((widget) => reactive(
-        { ...widget, transition: new Transition(widget, fieldMap) },
-      )),
-    );
+
+    const options = ref([]);
+
+    watch(widgets, (val) => {
+      options.value = reactive(
+        clonedeep(val).map((widget) => reactive(
+          { ...widget, transition: new Transition(widget, fieldMap) },
+        )),
+      );
+    }, { immediate: true });
+
     // set unique identification field
     ctx.$animateParams.keyField = fieldMap.key;
 
@@ -320,10 +327,10 @@ export default defineComponent({
         ctx.$animateParams.maxTime = state.maxTime;
         ctx.$animateParams.isRepeat = state.isRepeat;
       }
-      options.forEach((option) => {
+      options.value.forEach((option) => {
         Object.assign(option.transition, { needUpdateProp: true });
       });
-      emit('onUpdate', options);
+      emit('onUpdate', options.value);
     };
 
     const resizeDecorate = () => {
@@ -465,7 +472,7 @@ export default defineComponent({
       // clear timeline group all children
       element.timelineGroup.clear();
       const { width } = rect;
-      const reduceList = options.reduce((acc, cur, index, array) => {
+      const reduceList = options.value.reduce((acc, cur, index, array) => {
         const pre = array[index - 1];
         if (!pre) {
           acc.totalList.push(0);
@@ -476,7 +483,7 @@ export default defineComponent({
         return acc;
       }, { totalList: [], total: 0 });
 
-      options.forEach(({ transition: { isExpanded, animations } }, i) => {
+      options.value.forEach(({ transition: { isExpanded, animations } }, i) => {
         const allAnchors = animations.flatMap((animation) => animation.anchors);
         const overviewAnchors = Array.from(new Set(allAnchors.map((anchor) => anchor.time)));
         const { totalList } = reduceList;
@@ -605,7 +612,7 @@ export default defineComponent({
     const handleUpdate = () => {
       drawAnchors();
       setPlayBarToFront();
-      emit('onUpdate', options);
+      emit('onUpdate', options.value);
     };
 
     const onLeftPointMouseDown = () => {
