@@ -51,10 +51,14 @@
             :time="time"
             v-for="option in options"
             :option="option.transition"
-            :key="option[key]"
+            :key="get(option, key)"
+            :id="get(option, key)"
+            :active="get(option, key) === activeKey"
             @timeUpdate="handleTimeUpdate"
             @update="handleUpdate"
-          />
+            @click.native="handleSelectWidget(option)"
+          >
+          </widget>
         </div>
       </div>
       <!-- E widget control panel -->
@@ -80,6 +84,7 @@ import {
 } from 'vue-demi';
 import { throttledWatch } from '@vueuse/core';
 import clonedeep from 'lodash.clonedeep';
+import get from 'lodash.get';
 import useResize from '@/utils/useResize.ts';
 import Transition from '@/models/Transition';
 import {
@@ -88,6 +93,7 @@ import {
 } from '@/utils/constant.ts';
 import SvgIcon from '@/components/SvgIcon.vue';
 import Widget from '@/components/Widget.vue';
+import { generateAnimates } from '@/utils';
 
 export default defineComponent({
   name: 'AnimationTimeline',
@@ -109,7 +115,7 @@ export default defineComponent({
     const instance = getCurrentInstance();
     const ctx = instance.ctx || instance;
     const { widgets, fields } = toRefs(props);
-    const { rect } = useResize();
+    const { rect, resize } = useResize();
     const fieldMap = reactive({
       ...DEFAULT_FIELDS, ...fields.value,
     });
@@ -117,11 +123,15 @@ export default defineComponent({
     const options = ref([]);
 
     watch(widgets, (val) => {
+      const transitions = [];
       options.value = reactive(
-        clonedeep(val).map((widget) => reactive(
-          { ...widget, transition: new Transition(widget, fieldMap) },
-        )),
+        clonedeep(val).map((widget) => {
+          const option = reactive({ ...widget, transition: new Transition(widget, fieldMap) });
+          transitions.push(option.transition);
+          return option;
+        }),
       );
+      ctx.$animateParams.animates = generateAnimates(transitions);
     }, { immediate: true });
 
     // set unique identification field
@@ -138,6 +148,7 @@ export default defineComponent({
       isPlay: false,
       isRepeat: false,
       container: null,
+      activeKey: '',
     });
 
     const element = reactive({
@@ -327,10 +338,6 @@ export default defineComponent({
         ctx.$animateParams.maxTime = state.maxTime;
         ctx.$animateParams.isRepeat = state.isRepeat;
       }
-      options.value.forEach((option) => {
-        Object.assign(option.transition, { needUpdateProp: true });
-      });
-      emit('onUpdate', options.value);
     };
 
     const resizeDecorate = () => {
@@ -567,6 +574,7 @@ export default defineComponent({
     };
 
     const handlePlay = () => {
+      console.log(ctx.$animate);
       state.isPlay = !state.isPlay;
       if (state.isPlay) {
         element.animate.play();
@@ -609,10 +617,15 @@ export default defineComponent({
       state.time = t;
     };
 
-    const handleUpdate = () => {
+    const handleUpdate = (option) => {
       drawAnchors();
       setPlayBarToFront();
-      emit('onUpdate', options.value);
+      emit('onUpdate', option);
+    };
+
+    const handleSelectWidget = (option) => {
+      state.activeKey = get(option, state.key);
+      emit('onSelect', option);
     };
 
     const onLeftPointMouseDown = () => {
@@ -773,6 +786,9 @@ export default defineComponent({
       handleRepeat,
       handleTimeUpdate,
       handleUpdate,
+      handleSelectWidget,
+      resize,
+      get,
     };
   },
 });
@@ -783,7 +799,6 @@ export default defineComponent({
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border: 1px solid #cccccc;
   border-top: none;
 
   header {
@@ -793,7 +808,6 @@ export default defineComponent({
     justify-content: space-between;
     width: 100%;
     height: 40px;
-    border-top: 3px solid #000000;
     box-sizing: border-box;
     padding: 0 12px;
   }
@@ -865,7 +879,9 @@ export default defineComponent({
   }
 
   &__widgets {
-    height: calc(100% - 56px);
+    height: calc(100% - 96px);
+    box-sizing: border-box;
+    padding-bottom: 12px;
     overflow: auto;
   }
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="widget">
+  <div class="widget" :class="active ? 'widget--active' : ''" v-if="option">
     <div class="widget__header">
       <svg-icon
         :icon-name="!visible ? 'eye-close' : 'circle'"
@@ -107,9 +107,15 @@ export default defineComponent({
       type: Number,
       default: 0,
     },
+    active: {
+      type: Boolean,
+      default: false,
+    },
+    id: {
+    },
   },
   setup(props, { emit }) {
-    const { option, time } = toRefs(props);
+    const { option, time, id } = toRefs(props);
     const animationTypes = reactive(clonedeep(ANIMATION_TYPES));
     const isShowAnimations = ref(false);
     const name = computed(() => option.value.name);
@@ -140,7 +146,7 @@ export default defineComponent({
         animations.value.splice(index, 1);
       }
       option.value.needUpdateOption = true;
-      emit('update');
+      emit('update', { transition: option.value, key: id?.value });
     };
 
     const isActive = (prop: string) => animations.value.find((animation: AnimationType) => animation.prop === prop);
@@ -148,19 +154,19 @@ export default defineComponent({
     const handleVisible = () => {
       option.value.visible = !option.value.visible;
       option.value.needUpdateOption = true;
-      emit('update');
+      emit('update', { transition: option.value, key: id?.value });
     };
 
     const handleLocked = () => {
       option.value.isLocked = !option.value.isLocked;
       option.value.needUpdateOption = true;
-      emit('update');
+      emit('update', { transition: option.value, key: id?.value });
     };
 
     const handleExpanded = () => {
       option.value.isExpanded = !option.value.isExpanded;
       option.value.needUpdateOption = true;
-      emit('update');
+      emit('update', { transition: option.value, key: id?.value });
     };
 
     const handleRemove = ({ prop }: AnimationType) => {
@@ -169,7 +175,7 @@ export default defineComponent({
       Object.assign(animations.value[index], defaultAnimationType);
       animations.value.splice(index, 1);
       option.value.needUpdateOption = true;
-      emit('update');
+      emit('update', { transition: option.value, key: id?.value });
     };
 
     const handleCurve = ({ prop }: AnimationType) => {
@@ -183,7 +189,7 @@ export default defineComponent({
         anchors.splice(index, 1, { ...anchor, value: +target.value });
       }
       option.value.needUpdateOption = true;
-      emit('update');
+      emit('update', { transition: option.value, key: id?.value });
     };
 
     const handleLeft = (animation: AnimationType) => {
@@ -250,7 +256,7 @@ export default defineComponent({
         anchors.splice(index, 1);
       }
       option.value.needUpdateOption = true;
-      emit('update');
+      emit('update', { transition: option.value, key: id?.value });
     };
 
     const isAnchorActive = (anchors: Anchor[]) => anchors.some((anchor: Anchor) => anchor.time === time.value);
@@ -288,6 +294,14 @@ export default defineComponent({
   font-size: 12px;
   border-bottom: 1px solid #f5f5f5;
   box-sizing: border-box;
+
+  &:hover {
+    background: #d7d7d7;
+  }
+
+  &--active {
+    background: #d7d7d7;
+  }
 
   &__header {
     display: flex;
@@ -431,6 +445,7 @@ export default defineComponent({
       font-size: 12px;
       width: 56px;
       text-align: right;
+      margin: 0;
     }
 
     input {
@@ -466,6 +481,7 @@ export default defineComponent({
     border: 1px solid rgba(0, 0, 0, .56);
     transform: rotate(45deg);
     cursor: pointer;
+    box-sizing: content-box;
 
     &:hover {
       border: 1px solid rgba(0, 0, 0, 1);

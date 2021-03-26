@@ -1,6 +1,9 @@
 import { isVue2 } from 'vue-demi';
 import AnimationTimeline from '@/lib/AnimationTimeline.vue';
-import { AnimationDirectiveV2, AnimationDirectiveV3 } from '@/directive/AnimationDirective';
+import {
+  AnimationDirectiveV2,
+  AnimationDirectiveV3,
+} from '@/directive/AnimationDirective';
 import '@/assets/iconfont';
 
 export { AnimationTimeline };
@@ -26,16 +29,16 @@ export default {
 
       app.prototype.$animate = {
         play: () => {
-          app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.play());
+          app.prototype.$animateParams.animates.forEach((animate: any) => animate.play());
         },
         pause: () => {
-          app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.pause());
+          app.prototype.$animateParams.animates.forEach((animate: any) => animate.pause());
         },
         restart: () => {
-          app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.restart());
+          app.prototype.$animateParams.animates.forEach((animate: any) => animate.restart());
         },
         seek: (timeStamp: number) => {
-          app.prototype.$animateParams.animates.forEach(({ animate }: any) => animate.seek(timeStamp));
+          app.prototype.$animateParams.animates.forEach((animate: any) => animate.seek(timeStamp));
         },
       };
     } else {
@@ -46,6 +49,8 @@ export default {
         animates: [],
         // repeat animate
         isRepeat: false,
+        // unique identification field name
+        keyField: 'key',
       };
 
       const { animates } = app.config.globalProperties.$animateParams;

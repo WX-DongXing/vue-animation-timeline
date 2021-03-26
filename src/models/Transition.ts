@@ -12,15 +12,17 @@ export default class Transition {
 
   top: number;
 
+  maxTime: number;
+
+  key: string | any;
+
   isExpanded: boolean;
 
   visible: boolean;
 
   isLocked: boolean;
 
-  needUpdateProp: boolean;
-
-  needUpdateOption: boolean;
+  isRepeat: boolean;
 
   animations?: AnimationType[];
 
@@ -30,11 +32,12 @@ export default class Transition {
     this.height = get(widget, fieldMap.height);
     this.left = get(widget, fieldMap.left) || 0;
     this.top = get(widget, fieldMap.top) || 0;
+    this.key = get(widget, fieldMap.key) || '';
     this.animations = get(widget, 'transition.animations') || [];
     this.isExpanded = get(widget, 'transition.isExpanded') || false;
     this.visible = get(widget, 'transition.visible') || true;
     this.isLocked = get(widget, 'transition.isLocked') || false;
-    this.needUpdateProp = false;
-    this.needUpdateOption = false;
+    this.isRepeat = get(widget, 'transition.isRepeat') || false;
+    this.maxTime = get(widget, 'transition.maxTime') || 10000;
   }
 }

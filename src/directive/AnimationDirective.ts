@@ -76,6 +76,7 @@ const AnimationDirectiveV2: any = {
     const {
       maxTime, isRepeat, animates, keyField,
     } = (vNode.context as AnimationTimelineProp).$animateParams;
+    console.log('init');
     // init animate instance
     const animate = anime.timeline({
       targets: el,
@@ -94,6 +95,7 @@ const AnimationDirectiveV2: any = {
     const {
       maxTime, isRepeat, animates, keyField,
     } = (vNode.context as AnimationTimelineProp).$animateParams;
+    console.log('update');
 
     const target = animates.find((ani: Animate) => ani.key === get(value, keyField));
 

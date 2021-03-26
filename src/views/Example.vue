@@ -4,7 +4,7 @@
       <div
         class="panel"
         v-for="widget in widgets"
-        v-animation="widget"
+        :id="widget.key"
         :key="widget.key"
         :style="{
           height: `${widget.height}px`,
@@ -61,8 +61,12 @@ export default defineComponent({
     };
   },
   methods: {
-    handleUpdate(items: any[]) {
-      this.widgets = items;
+    handleUpdate(item: any) {
+      const index = this.widgets.findIndex((widget) => widget.key === item.key);
+      if (index !== -1) {
+        const widget = { ...this.widgets[index], transition: item.transition };
+        this.widgets.splice(index, 1, widget);
+      }
     },
   },
 });

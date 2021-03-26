@@ -11,7 +11,7 @@ export default function useResize() {
     height: ref(0),
   });
 
-  const resized = () => {
+  const resize = () => {
     const dom = document.getElementById('painter');
     const {
       x, y, height, width,
@@ -25,15 +25,16 @@ export default function useResize() {
   };
 
   onMounted(() => {
-    resized();
-    window.addEventListener('resize', useThrottleFn(resized, 16));
+    resize();
+    window.addEventListener('resize', useThrottleFn(resize, 16));
   });
 
   onUnmounted(() => {
-    window.removeEventListener('resize', useThrottleFn(resized, 16));
+    window.removeEventListener('resize', useThrottleFn(resize, 16));
   });
 
   return {
     rect,
+    resize,
   };
 }
