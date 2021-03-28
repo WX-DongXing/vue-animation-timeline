@@ -122,18 +122,6 @@ export default defineComponent({
 
     const options = ref([]);
 
-    watch(widgets, (val) => {
-      const transitions = [];
-      options.value = reactive(
-        clonedeep(val).map((widget) => {
-          const option = reactive({ ...widget, transition: new Transition(widget, fieldMap) });
-          transitions.push(option.transition);
-          return option;
-        }),
-      );
-      ctx.$animateParams.animates = generateAnimates(transitions);
-    }, { immediate: true });
-
     // set unique identification field
     ctx.$animateParams.keyField = fieldMap.key;
 
@@ -413,6 +401,8 @@ export default defineComponent({
       });
       element.axisTicks = [];
 
+      if (!element.painter) return;
+
       for (const index in new Array(unitTickCount.value + 1).fill(null)) {
         const min = unitSecondLength.value / scaleRate.value <= TICK_MIN_LENGTH;
         const max = unitSecondLength.value / scaleRate.value >= TICK_MAX_LENGTH;
@@ -468,14 +458,9 @@ export default defineComponent({
       }
     };
 
-    // set play bar to front
-    const setPlayBarToFront = () => {
-      element.playBarTriangle.toFront();
-      element.playBarLine.toFront();
-    };
-
     // draw anchors
     const drawAnchors = () => {
+      if (!element.timelineGroup) return;
       // clear timeline group all children
       element.timelineGroup.clear();
       const { width } = rect;
@@ -573,8 +558,15 @@ export default defineComponent({
       });
     };
 
+    // set play bar to front
+    const setPlayBarToFront = () => {
+      if (element.playBarTriangle && element.playBarLine) {
+        element.playBarTriangle.toFront();
+        element.playBarLine.toFront();
+      }
+    };
+
     const handlePlay = () => {
-      console.log(ctx.$animate);
       state.isPlay = !state.isPlay;
       if (state.isPlay) {
         element.animate.play();
@@ -762,6 +754,23 @@ export default defineComponent({
     throttledWatch(() => ([state.isRepeat, state.maxTime]), () => {
       setAnimateOption();
     }, { throttle: 16 });
+
+    watch(widgets, (val) => {
+      const transitions = [];
+      options.value = reactive(
+        clonedeep(val).map((widget) => {
+          const option = reactive({ ...widget, transition: new Transition(widget, fieldMap) });
+          transitions.push(option.transition);
+          return option;
+        }),
+      );
+      ctx.$animateParams.animates = generateAnimates(transitions);
+
+      // update and redraw ticks anchors
+      drawTick();
+      drawAnchors();
+      setPlayBarToFront();
+    }, { immediate: true });
 
     onMounted(() => {
       initCanvas();
