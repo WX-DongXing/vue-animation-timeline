@@ -145,7 +145,6 @@ export default defineComponent({
         );
         animations.value.splice(index, 1);
       }
-      option.value.needUpdateOption = true;
       emit('update', { transition: option.value, key: id?.value });
     };
 
@@ -153,19 +152,16 @@ export default defineComponent({
 
     const handleVisible = () => {
       option.value.visible = !option.value.visible;
-      option.value.needUpdateOption = true;
       emit('update', { transition: option.value, key: id?.value });
     };
 
     const handleLocked = () => {
       option.value.isLocked = !option.value.isLocked;
-      option.value.needUpdateOption = true;
       emit('update', { transition: option.value, key: id?.value });
     };
 
     const handleExpanded = () => {
       option.value.isExpanded = !option.value.isExpanded;
-      option.value.needUpdateOption = true;
       emit('update', { transition: option.value, key: id?.value });
     };
 
@@ -174,7 +170,6 @@ export default defineComponent({
       const defaultAnimationType = ANIMATION_TYPES.find((animationType) => animationType.prop === animations.value[index].type);
       Object.assign(animations.value[index], defaultAnimationType);
       animations.value.splice(index, 1);
-      option.value.needUpdateOption = true;
       emit('update', { transition: option.value, key: id?.value });
     };
 
@@ -188,7 +183,6 @@ export default defineComponent({
         const anchor: Anchor = anchors[index];
         anchors.splice(index, 1, { ...anchor, value: +target.value });
       }
-      option.value.needUpdateOption = true;
       emit('update', { transition: option.value, key: id?.value });
     };
 
@@ -255,7 +249,6 @@ export default defineComponent({
       } else {
         anchors.splice(index, 1);
       }
-      option.value.needUpdateOption = true;
       emit('update', { transition: option.value, key: id?.value });
     };
 

@@ -1,6 +1,8 @@
 import get from 'lodash.get';
 import { AnimationType } from '@/utils/types.ts';
 
+const isBoolean = (bol: any) => Object.prototype.toString.call(bol) === '[object Boolean]';
+
 export default class Transition {
   name?: string;
 
@@ -35,7 +37,7 @@ export default class Transition {
     this.key = get(widget, fieldMap.key) || '';
     this.animations = get(widget, 'transition.animations') || [];
     this.isExpanded = get(widget, 'transition.isExpanded') || false;
-    this.visible = get(widget, 'transition.visible') || true;
+    this.visible = isBoolean(get(widget, 'transition.visible')) ? get(widget, 'transition.visible') : true;
     this.isLocked = get(widget, 'transition.isLocked') || false;
     this.isRepeat = get(widget, 'transition.isRepeat') || false;
     this.maxTime = get(widget, 'transition.maxTime') || 10000;
