@@ -12,7 +12,7 @@ export default {
   install: (app: any) => {
     app.component('AnimationTimeline', AnimationTimeline);
     app.directive(
-      'animation', isVue2 ? AnimationDirectiveV2 : AnimationDirectiveV3,
+      'transition', isVue2 ? AnimationDirectiveV2 : AnimationDirectiveV3,
     );
 
     if (isVue2) {
@@ -23,8 +23,6 @@ export default {
         animates: [],
         // repeat animate
         isRepeat: false,
-        // unique identification field name
-        keyField: 'key',
       };
 
       app.prototype.$animate = {
@@ -49,8 +47,6 @@ export default {
         animates: [],
         // repeat animate
         isRepeat: false,
-        // unique identification field name
-        keyField: 'key',
       };
 
       const { animates } = app.config.globalProperties.$animateParams;
