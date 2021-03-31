@@ -201,17 +201,10 @@ export default defineComponent({
       }
 
       for (const index in anchors) {
-        if (anchors[index].time === time.value) {
+        if (anchors[index].time >= time.value) {
           const preAnchor = anchors[+index - 1];
           animation.value = preAnchor.value;
           !!preAnchor && emit('timeUpdate', preAnchor.time);
-          break;
-        }
-
-        if (anchors[index].time > time.value) {
-          const targetAnchor = anchors[+index - 1];
-          animation.value = targetAnchor.value;
-          emit('timeUpdate', targetAnchor.time);
           break;
         }
       }

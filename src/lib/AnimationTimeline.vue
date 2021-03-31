@@ -818,19 +818,16 @@ export default defineComponent({
       if (state.isPlay) return;
       const { times } = ctx.$animateParams;
       if (state.time > 0 && times && times.length) {
-        const [firstTime] = times;
-        if (state.time < firstTime) {
-          state.time = 0;
+        const lastTime = times[times.length - 1];
+        if (state.time > lastTime) {
+          state.time = lastTime;
           return;
         }
-        for (let i = times.length - 1; i >= 0; i--) {
+
+        for (const i in times) {
           const time = times[i];
-          if (state.time > time) {
-            state.time = time;
-            break;
-          }
-          if (state.time === time) {
-            const preTime = times[i - 1];
+          if (time >= state.time) {
+            const preTime = times[+i - 1];
             if (preTime) {
               state.time = preTime;
             } else {
