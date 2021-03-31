@@ -5,6 +5,7 @@ import {
   AnimationDirectiveV3,
 } from '@/directive/AnimationDirective';
 import '@/assets/iconfont';
+import { LEADING_TIME } from '@/utils/constant';
 
 export { AnimationTimeline };
 
@@ -26,17 +27,36 @@ export default {
       };
 
       app.prototype.$animate = {
-        play: () => {
-          app.prototype.$animateParams.animates.forEach((animate: any) => animate.play());
+        play: (time: number | null) => {
+          app.prototype.$animateParams.animates.forEach((animate: any) => {
+            if (time) {
+              animate.completed = false;
+              animate.play();
+              return;
+            }
+            animate.play();
+            animate.pause();
+            animate.seek(LEADING_TIME);
+            setTimeout(() => {
+              animate.play();
+            });
+          });
         },
         pause: () => {
           app.prototype.$animateParams.animates.forEach((animate: any) => animate.pause());
         },
         restart: () => {
-          app.prototype.$animateParams.animates.forEach((animate: any) => animate.restart());
+          app.prototype.$animateParams.animates.forEach((animate: any) => {
+            animate.play();
+            animate.pause();
+            animate.seek(LEADING_TIME);
+            setTimeout(() => {
+              animate.play();
+            });
+          });
         },
-        seek: (timeStamp: number) => {
-          app.prototype.$animateParams.animates.forEach((animate: any) => animate.seek(timeStamp));
+        seek: (time: number | null) => {
+          app.prototype.$animateParams.animates.forEach((animate: any) => animate.seek(LEADING_TIME + (time || 0)));
         },
       };
     } else {
@@ -52,17 +72,36 @@ export default {
       const { animates } = app.config.globalProperties.$animateParams;
 
       app.config.globalProperties.$animate = {
-        play: () => {
-          animates.forEach(({ animate }: any) => animate.play());
+        play: (time: number | null) => {
+          animates.forEach((animate: any) => {
+            if (time) {
+              animate.completed = false;
+              animate.play();
+              return;
+            }
+            animate.play();
+            animate.pause();
+            animate.seek(LEADING_TIME);
+            setTimeout(() => {
+              animate.play();
+            });
+          });
         },
         pause: () => {
           animates.forEach(({ animate }: any) => animate.pause());
         },
         restart: () => {
-          animates.forEach(({ animate }: any) => animate.restart());
+          animates.forEach(({ animate }: any) => {
+            animate.play();
+            animate.pause();
+            animate.seek(LEADING_TIME);
+            setTimeout(() => {
+              animate.play();
+            });
+          });
         },
-        seek: (timeStamp: number) => {
-          animates.forEach(({ animate }: any) => animate.seek(timeStamp));
+        seek: (time: number | null) => {
+          animates.forEach(({ animate }: any) => animate.seek(LEADING_TIME + (time || 0)));
         },
       };
     }

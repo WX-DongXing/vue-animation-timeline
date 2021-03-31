@@ -1,6 +1,7 @@
 import anime from 'animejs';
 import Transition from '@/models/Transition';
 import { Anchor, AnimationType } from '@/utils/types';
+import { LEADING_TIME } from '@/utils/constant';
 
 /**
  * format timeline options
@@ -15,7 +16,7 @@ const animateOptions = (transition: Transition) => {
         endTime: time,
         prop,
         value,
-        preValue: preAnchor ? preAnchor.value : 0,
+        preValue: preAnchor ? preAnchor.value : +(['opacity', 'scaleX', 'scaleY'].includes(prop) && 1),
       };
     }));
 
@@ -28,8 +29,22 @@ const animateOptions = (transition: Transition) => {
       startTime, endTime, prop, value, preValue,
     }) => {
       let middleTime = startTime;
-      const sections = [];
+      const sections: any[] = [];
       for (const anchorTime of anchorTimes) {
+        if (startTime === 0 && endTime === 0) {
+          const node = sections.find((section) => section.startTime === 0 && section.endTime === 0);
+          if (node) {
+            Object.assign(node, {
+              [prop]: value,
+            });
+          } else {
+            sections.push({
+              startTime: middleTime,
+              endTime: anchorTime,
+              [prop]: value,
+            });
+          }
+        }
         if (anchorTime > middleTime && anchorTime <= endTime) {
           sections.push({
             startTime: middleTime,
@@ -57,16 +72,17 @@ const animateOptions = (transition: Transition) => {
         acc.push(cur);
       }
       return acc;
-    }, [])
+    }, [{
+      startTime: 0, endTime: 0, opacity: 1, scaleX: 1, scaleY: 1,
+    }])
     .sort((a, b) => a.startTime - b.startTime)
-    .map(({ startTime, endTime, ...props }: any, index: number, array: any[]) => {
+    .map(({ endTime, ...props }: any, index: number, array: any[]) => {
       const preProp: any = array[index - 1];
+      Reflect.deleteProperty(props, 'startTime');
+      const duration = preProp ? endTime - preProp?.endTime : endTime;
       return {
-        time: startTime,
-        animateProp: {
-          duration: preProp ? endTime - preProp?.endTime : endTime,
-          ...props,
-        },
+        duration: duration || LEADING_TIME,
+        ...props,
       };
     });
 };
@@ -77,17 +93,21 @@ const animateOptions = (transition: Transition) => {
  */
 const generateAnimates = (transitions: Transition[]) => transitions.map((transition: Transition) => {
   const { maxTime, isRepeat, key } = transition;
+  const targets: HTMLElement | null = document.getElementById(key);
+  if (targets) {
+    targets.style.transform = 'none';
+  }
   const animate = anime.timeline({
-    targets: document.getElementById(key),
+    targets,
     delay: 0,
-    duration: maxTime || 10000,
+    duration: (maxTime || 10000) + LEADING_TIME,
     direction: 'normal',
     easing: 'linear',
     loop: isRepeat,
     autoplay: false,
   });
   const options = animateOptions(transition || {});
-  options.forEach(({ animateProp, time }) => animate.add(animateProp, time));
+  options.forEach((animateProp) => animate.add(animateProp));
   return animate;
 });
 

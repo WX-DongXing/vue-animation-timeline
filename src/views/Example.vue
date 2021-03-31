@@ -13,14 +13,14 @@
           left: `${widget.x}px`,
         }"
       >
-        <div class="panel__side panel__font">
-          <span>{{ widget.name }}</span>
-        </div>
-        <div class="panel__side panel__back"></div>
-        <div class="panel__side panel__top"></div>
-        <div class="panel__side panel__bottom"></div>
-        <div class="panel__side panel__left"></div>
-        <div class="panel__side panel__right"></div>
+<!--        <div class="panel__side panel__font">-->
+<!--          <span>{{ widget.name }}</span>-->
+<!--        </div>-->
+<!--        <div class="panel__side panel__back"></div>-->
+<!--        <div class="panel__side panel__top"></div>-->
+<!--        <div class="panel__side panel__bottom"></div>-->
+<!--        <div class="panel__side panel__left"></div>-->
+<!--        <div class="panel__side panel__right"></div>-->
       </div>
     </div>
     <animation-timeline style="height: 500px" :widgets="widgets" :fields="fields" @onUpdate="handleUpdate" />
@@ -35,20 +35,20 @@ export default defineComponent({
     return {
       widgets: [
         {
-          key: 1, name: 'A', y: 32, x: 72, width: 84, height: 84,
+          key: 'wi', name: 'A', y: 32, x: 72, width: 84, height: 84,
         },
-        {
-          key: 2, name: 'B', y: 132, x: 72, width: 84, height: 84,
-        },
-        {
-          key: 3, name: 'C', y: 232, x: 72, width: 84, height: 84,
-        },
-        {
-          key: 4, name: 'D', y: 332, x: 72, width: 84, height: 84,
-        },
-        {
-          key: 5, name: 'E', y: 432, x: 72, width: 84, height: 84,
-        },
+        // {
+        //   key: 2, name: 'B', y: 132, x: 72, width: 84, height: 84,
+        // },
+        // {
+        //   key: 3, name: 'C', y: 232, x: 72, width: 84, height: 84,
+        // },
+        // {
+        //   key: 4, name: 'D', y: 332, x: 72, width: 84, height: 84,
+        // },
+        // {
+        //   key: 5, name: 'E', y: 432, x: 72, width: 84, height: 84,
+        // },
       ],
       fields: {
         key: 'key',
@@ -97,6 +97,7 @@ export default defineComponent({
   font-size: 32px;
   perspective: 1200px;
   transform-style: preserve-3d;
+  background: #2ec7c9;
 
   &__side {
     position: absolute;

@@ -569,8 +569,15 @@ export default defineComponent({
     const handlePlay = () => {
       state.isPlay = !state.isPlay;
       if (state.isPlay) {
-        element.animate.play();
-        ctx.$animate.play();
+        if (state.time) {
+          element.animate.play();
+          element.animate.pause();
+          element.animate.seek(state.time);
+        }
+        setTimeout(() => {
+          element.animate.play();
+          ctx.$animate.play(state.time);
+        });
       } else {
         element.animate.pause();
         ctx.$animate.pause();
@@ -748,6 +755,7 @@ export default defineComponent({
     }, { throttle: 16 });
 
     throttledWatch(() => state.time, () => {
+      !state.isPlay && ctx.$animate.seek(state.time);
       resizePlayBar();
     }, { throttle: 16 });
 
@@ -764,7 +772,9 @@ export default defineComponent({
           return option;
         }),
       );
+
       ctx.$animateParams.animates = generateAnimates(transitions);
+      !state.isPlay && ctx.$animate.seek(state.time);
 
       // update and redraw ticks anchors
       drawTick();

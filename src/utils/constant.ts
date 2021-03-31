@@ -2,6 +2,8 @@ import { AnimationType } from '@/utils/types';
 
 const OFFSET = 50;
 
+const LEADING_TIME = 1000;
+
 const TICK_MIN_LENGTH = 50;
 
 const TICK_MAX_LENGTH = 150;
@@ -78,6 +80,7 @@ const DEFAULT_FIELDS = {
 
 export {
   OFFSET,
+  LEADING_TIME,
   TICK_MIN_LENGTH,
   TICK_MAX_LENGTH,
   DEFAULT_OPTION,
