@@ -569,15 +569,9 @@ export default defineComponent({
     const handlePlay = () => {
       state.isPlay = !state.isPlay;
       if (state.isPlay) {
-        if (state.time) {
-          element.animate.play();
-          element.animate.pause();
-          element.animate.seek(state.time);
-        }
-        setTimeout(() => {
-          element.animate.play();
-          ctx.$animate.play(state.time);
-        });
+        element.animate.seek(state.time);
+        element.animate.play();
+        ctx.$animate.play(state.time);
       } else {
         element.animate.pause();
         ctx.$animate.pause();
@@ -758,6 +752,7 @@ export default defineComponent({
     }, { throttle: 16 });
 
     throttledWatch(() => state.time, () => {
+      console.log('watch: ', state.time);
       !state.isPlay && ctx.$animate.seek(state.time);
       resizePlayBar();
     }, { throttle: 16 });
@@ -824,6 +819,11 @@ export default defineComponent({
       if (state.isPlay) return;
       const { times } = ctx.$animateParams;
       if (state.time > 0 && times && times.length) {
+        const [firstTime] = times;
+        if (state.time < firstTime) {
+          state.time = 0;
+          return;
+        }
         for (let i = times.length - 1; i >= 0; i--) {
           const time = times[i];
           if (state.time > time) {
@@ -847,6 +847,11 @@ export default defineComponent({
       if (state.isPlay) return;
       const { times } = ctx.$animateParams;
       if (state.time < state.maxTime && times && times.length) {
+        const lastTime = times[times.length - 1];
+        if (state.time > lastTime) {
+          state.time = state.maxTime;
+          return;
+        }
         for (const i in times) {
           const time = times[+i];
           if (state.time < time) {
