@@ -752,6 +752,7 @@ export default defineComponent({
     }, { throttle: 16 });
 
     throttledWatch(() => state.time, () => {
+      console.log('watch: ', state.time);
       !state.isPlay && ctx.$animate.seek(state.time);
       resizePlayBar();
     }, { throttle: 16 });
