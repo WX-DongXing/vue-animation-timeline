@@ -94,6 +94,7 @@ import {
 import SvgIcon from '@/components/SvgIcon.vue';
 import Widget from '@/components/Widget.vue';
 import { generateAnimates } from '@/utils';
+import useKey from '@/utils/useKey';
 
 export default defineComponent({
   name: 'AnimationTimeline',
@@ -297,7 +298,6 @@ export default defineComponent({
           y2: 48,
           stroke: '#212121',
           lineWidth: 1,
-          cursor: 'move',
         },
       });
     };
@@ -644,8 +644,11 @@ export default defineComponent({
       record.endTime = state.endTime;
     };
 
-    const onAllowPlayBarMove = () => {
+    const onAllowPlayBarMove = ({ x }) => {
       record.allowPlayBarMove = true;
+      const rate = state.maxTime / ((rect.width - 20) / scaleRate.value);
+      const timeBuffer = (record.offset / (unitSecondLength.value / scaleRate.value)) * 1000;
+      state.time = rate * (x - 10) + timeBuffer;
     };
 
     const onPainterMouseMove = ({ x }) => {
@@ -773,7 +776,10 @@ export default defineComponent({
         }),
       );
 
-      ctx.$animateParams.animates = generateAnimates(transitions);
+      const { animates, times } = generateAnimates(transitions);
+
+      Object.assign(ctx.$animateParams, { animates, times });
+
       !state.isPlay && ctx.$animate.seek(state.time);
 
       // update and redraw ticks anchors
@@ -781,6 +787,84 @@ export default defineComponent({
       drawAnchors();
       setPlayBarToFront();
     }, { immediate: true });
+
+    useKey('space', () => {
+      handlePlay();
+    });
+
+    useKey('⌘+backspace', () => {
+      handleBack();
+    });
+
+    useKey('⌘+enter', () => {
+      handleReset();
+    });
+
+    useKey('left', () => {
+      if (!state.isPlay && state.time <= state.maxTime && state.time >= 0) {
+        if (state.time <= 20) {
+          state.time = 0;
+        } else {
+          state.time -= 20;
+        }
+      }
+    });
+
+    useKey('right', () => {
+      if (!state.isPlay && state.time <= state.maxTime && state.time >= 0) {
+        if (state.time + 20 >= state.maxTime) {
+          state.time = state.maxTime;
+        } else {
+          state.time += 20;
+        }
+      }
+    });
+
+    useKey('control+shift+left', () => {
+      if (state.isPlay) return;
+      const { times } = ctx.$animateParams;
+      if (state.time > 0 && times && times.length) {
+        for (let i = times.length - 1; i >= 0; i--) {
+          const time = times[i];
+          if (state.time > time) {
+            state.time = time;
+            break;
+          }
+          if (state.time === time) {
+            const preTime = times[i - 1];
+            if (preTime) {
+              state.time = preTime;
+            } else {
+              state.time = 0;
+            }
+            break;
+          }
+        }
+      }
+    });
+
+    useKey('control+shift+right', () => {
+      if (state.isPlay) return;
+      const { times } = ctx.$animateParams;
+      if (state.time < state.maxTime && times && times.length) {
+        for (const i in times) {
+          const time = times[+i];
+          if (state.time < time) {
+            state.time = time;
+            break;
+          }
+          if (state.time === time) {
+            const nextTime = times[+i + 1];
+            if (nextTime) {
+              state.time = nextTime;
+            } else {
+              state.time = state.maxTime;
+            }
+            break;
+          }
+        }
+      }
+    });
 
     onMounted(() => {
       initCanvas();

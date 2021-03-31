@@ -24,6 +24,8 @@ export default {
         animates: [],
         // repeat animate
         isRepeat: false,
+        // all the anchor time
+        times: [],
       };
 
       app.prototype.$animate = {
@@ -67,6 +69,8 @@ export default {
         animates: [],
         // repeat animate
         isRepeat: false,
+        // all the anchor time
+        times: [],
       };
 
       const { animates } = app.config.globalProperties.$animateParams;

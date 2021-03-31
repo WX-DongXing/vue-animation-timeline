@@ -22,9 +22,9 @@ const animateOptions = (transition: Transition) => {
 
   // get all time
   const anchorTimes = [...new Set(anchorProps.map((anchorProp: any) => anchorProp.endTime))]
-    .sort((a, b) => a - b);
+    .sort((a, b) => a - b) || [];
 
-  return anchorProps
+  const animateProps = anchorProps
     .flatMap(({
       startTime, endTime, prop, value, preValue,
     }) => {
@@ -85,31 +85,44 @@ const animateOptions = (transition: Transition) => {
         ...props,
       };
     });
+
+  return { anchorTimes, animateProps };
 };
 
 /**
  * generate animates
  * @param transitions
  */
-const generateAnimates = (transitions: Transition[]) => transitions.map((transition: Transition) => {
-  const { maxTime, isRepeat, key } = transition;
-  const targets: HTMLElement | null = document.getElementById(key);
-  if (targets) {
-    targets.style.transform = 'none';
-  }
-  const animate = anime.timeline({
-    targets,
-    delay: 0,
-    duration: (maxTime || 10000) + LEADING_TIME,
-    direction: 'normal',
-    easing: 'linear',
-    loop: isRepeat,
-    autoplay: false,
+const generateAnimates = (transitions: Transition[]) => {
+  const animates: any[] = [];
+  const times: any[] = [];
+
+  transitions.forEach((transition: Transition) => {
+    const { maxTime, isRepeat, key } = transition;
+    const targets: HTMLElement | null = document.getElementById(key);
+    if (targets) {
+      targets.style.transform = 'none';
+    }
+    const animate = anime.timeline({
+      targets,
+      delay: 0,
+      duration: (maxTime || 10000) + LEADING_TIME,
+      direction: 'normal',
+      easing: 'linear',
+      loop: isRepeat,
+      autoplay: false,
+    });
+    const { anchorTimes, animateProps } = animateOptions(transition || {});
+    animateProps.forEach((animateProp) => animate.add(animateProp));
+    animates.push(animate);
+    times.push(...anchorTimes);
   });
-  const options = animateOptions(transition || {});
-  options.forEach((animateProp) => animate.add(animateProp));
-  return animate;
-});
+
+  return {
+    animates,
+    times: [...new Set(times)].sort((a, b) => a - b),
+  };
+};
 
 export {
   animateOptions,
