@@ -1,5 +1,6 @@
 <template>
   <div class="widget" :class="active ? 'widget--active' : ''" v-if="option">
+    {{ temporaryValues }}
     <div class="widget__header">
       <svg-icon
         :icon-name="!visible ? 'eye-close' : 'circle'"
@@ -86,7 +87,7 @@
 
 <script lang="ts">
 import {
-  computed, ref, reactive,
+  computed, ref, reactive, watch,
   defineComponent, toRefs,
 } from 'vue-demi';
 import clonedeep from 'lodash.clonedeep';
@@ -124,6 +125,13 @@ export default defineComponent({
     const isExpanded = computed(() => option.value.isExpanded);
     const isLocked = computed(() => option.value.isLocked);
     const animations = computed(() => option.value.animations);
+    const temporaryValues: any = ref({});
+
+    watch(animations, (val) => {
+      const options = val.reduce((acc: any, cur: any) => ({ ...acc, [cur.prop]: cur.value }), {});
+      Object.assign(options, temporaryValues.value);
+      temporaryValues.value = options;
+    });
 
     const isActive = (prop: string) => animations.value.find((animation: AnimationType) => animation.prop === prop);
 
@@ -249,7 +257,7 @@ export default defineComponent({
         animations.value.forEach((animation: any) => {
           const anchor = animation.anchors.find((item: any) => item.time === newTime);
           if (anchor) {
-            animation.value = anchor.value;
+            temporaryValues.value[animation.prop] = anchor.value;
           }
         });
       }
@@ -263,6 +271,7 @@ export default defineComponent({
       isShowAnimations,
       animations,
       animationTypes,
+      temporaryValues,
       isActive,
       handleVisible,
       handleLocked,

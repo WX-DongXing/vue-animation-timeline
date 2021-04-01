@@ -23,7 +23,7 @@
 <!--        <div class="panel__side panel__right"></div>-->
       </div>
     </div>
-    <animation-timeline style="height: 500px" :widgets="widgets" :fields="fields" @onUpdate="handleUpdate" />
+    <animation-timeline style="height: 600px" :widgets="widgets" :fields="fields" @onUpdate="handleUpdate" />
   </div>
 </template>
 
@@ -37,18 +37,18 @@ export default defineComponent({
         {
           key: 'wi', name: 'A', y: 32, x: 72, width: 84, height: 84,
         },
-        // {
-        //   key: 2, name: 'B', y: 132, x: 72, width: 84, height: 84,
-        // },
-        // {
-        //   key: 3, name: 'C', y: 232, x: 72, width: 84, height: 84,
-        // },
-        // {
-        //   key: 4, name: 'D', y: 332, x: 72, width: 84, height: 84,
-        // },
-        // {
-        //   key: 5, name: 'E', y: 432, x: 72, width: 84, height: 84,
-        // },
+        {
+          key: 2, name: 'B', y: 132, x: 72, width: 84, height: 84,
+        },
+        {
+          key: 3, name: 'C', y: 232, x: 72, width: 84, height: 84,
+        },
+        {
+          key: 4, name: 'D', y: 332, x: 72, width: 84, height: 84,
+        },
+        {
+          key: 5, name: 'E', y: 432, x: 72, width: 84, height: 84,
+        },
       ],
       fields: {
         key: 'key',

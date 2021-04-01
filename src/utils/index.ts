@@ -98,15 +98,15 @@ const generateAnimates = (transitions: Transition[]) => {
   const times: any[] = [];
 
   transitions.forEach((transition: Transition) => {
-    const { maxTime, isRepeat, key } = transition;
+    const { isRepeat, key } = transition;
     const targets: HTMLElement | null = document.getElementById(key);
+    // clear default transition
     if (targets) {
       targets.style.transform = 'none';
     }
     const animate = anime.timeline({
       targets,
       delay: 0,
-      duration: (maxTime || 10000) + LEADING_TIME,
       direction: 'normal',
       easing: 'linear',
       loop: isRepeat,
