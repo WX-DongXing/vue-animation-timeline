@@ -92,6 +92,7 @@ import {
 import clonedeep from 'lodash.clonedeep';
 import { ANIMATION_TYPES } from '@/utils/constant.ts';
 import { Anchor, AnimationType } from '@/utils/types.ts';
+import { debouncedWatch } from '@vueuse/core';
 import SvgIcon from './SvgIcon.vue';
 
 export default defineComponent({
@@ -124,6 +125,10 @@ export default defineComponent({
     const isLocked = computed(() => option.value.isLocked);
     const animations = computed(() => option.value.animations);
 
+    const isActive = (prop: string) => animations.value.find((animation: AnimationType) => animation.prop === prop);
+
+    const isAnchorActive = (anchors: Anchor[]) => anchors.some((anchor: Anchor) => anchor.time === time.value);
+
     const handleShowAnimations = () => {
       isShowAnimations.value = !isShowAnimations.value;
     };
@@ -147,8 +152,6 @@ export default defineComponent({
       }
       emit('update', { transition: option.value, key: id?.value });
     };
-
-    const isActive = (prop: string) => animations.value.find((animation: AnimationType) => animation.prop === prop);
 
     const handleVisible = () => {
       option.value.visible = !option.value.visible;
@@ -195,7 +198,6 @@ export default defineComponent({
       }
       const lastAnchor = anchors[anchors.length - 1];
       if (lastAnchor.time < time.value) {
-        animation.value = lastAnchor.value;
         emit('timeUpdate', lastAnchor.time);
         return;
       }
@@ -203,7 +205,6 @@ export default defineComponent({
       for (const index in anchors) {
         if (anchors[index].time >= time.value) {
           const preAnchor = anchors[+index - 1];
-          animation.value = preAnchor.value;
           !!preAnchor && emit('timeUpdate', preAnchor.time);
           break;
         }
@@ -221,13 +222,11 @@ export default defineComponent({
       for (const index in anchors) {
         if (anchors[index].time === time.value) {
           const nextAnchor = anchors[+index + 1];
-          animation.value = nextAnchor.value;
           !!nextAnchor && emit('timeUpdate', nextAnchor.time);
           break;
         }
 
         if (anchors[index].time > time.value) {
-          animation.value = anchors[index].value;
           emit('timeUpdate', anchors[index].time);
           break;
         }
@@ -245,7 +244,16 @@ export default defineComponent({
       emit('update', { transition: option.value, key: id?.value });
     };
 
-    const isAnchorActive = (anchors: Anchor[]) => anchors.some((anchor: Anchor) => anchor.time === time.value);
+    debouncedWatch(time, (newTime) => {
+      if (animations.value.length) {
+        animations.value.forEach((animation: any) => {
+          const anchor = animation.anchors.find((item: any) => item.time === newTime);
+          if (anchor) {
+            animation.value = anchor.value;
+          }
+        });
+      }
+    }, { debounce: 100 });
 
     return {
       name,
