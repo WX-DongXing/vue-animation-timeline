@@ -1,6 +1,5 @@
 <template>
   <div class="widget" :class="active ? 'widget--active' : ''" v-if="option">
-    {{ temporaryValues }}
     <div class="widget__header">
       <svg-icon
         :icon-name="!visible ? 'eye-close' : 'circle'"
@@ -43,51 +42,61 @@
     </div>
 
     <div class="widget__content" v-if="isExpanded">
-      <div
-        class="widget__row"
+      <Prop
         v-for="animation in animations"
         :key="animation.prop"
-      >
-        <svg-icon icon-name="close" @click="handleRemove(animation)" />
+        :time="time"
+        :animation="animation"
+        @remove="handleRemove"
+        @left="handleLeft"
+        @anchor="handleAnchor"
+        @right="handleRight"
+      />
+<!--      <div-->
+<!--        class="widget__row"-->
+<!--        v-for="animation in animations"-->
+<!--        :key="animation.prop"-->
+<!--      >-->
+<!--        <svg-icon icon-name="close" @click="handleRemove(animation)" />-->
 
-        <span class="widget__divider"></span>
+<!--        <span class="widget__divider"></span>-->
 
-        <p>{{ animation.name }}</p>
+<!--        <p>{{ animation.name }}</p>-->
 
-        <input
-          type="text"
-          v-model.number="animation.value"
-          ref="input"
-          @input="(event) => handleInput(event, animation)"
-        >
+<!--        <input-->
+<!--          type="text"-->
+<!--          v-model.number="animation.value"-->
+<!--          ref="input"-->
+<!--          @input="(event) => handleInput(event, animation)"-->
+<!--        >-->
 
-        <svg-icon
-          :class="{'widget__icon--active': animation.curve && isAnchorActive(animation.anchors)}"
-          icon-name="all"
-          @click="handleCurve"
-        />
+<!--        <svg-icon-->
+<!--          :class="{'widget__icon&#45;&#45;active': animation.curve && isAnchorActive(animation.anchors)}"-->
+<!--          icon-name="all"-->
+<!--          @click="handleCurve"-->
+<!--        />-->
 
-        <div class="widget__control">
-          <svg-icon icon-name="left" @click="handleLeft(animation)" />
+<!--        <div class="widget__control">-->
+<!--          <svg-icon icon-name="left" @click="handleLeft(animation)" />-->
 
-          <span
-            :class="{
-              'widget__anchor': true,
-              'widget__anchor--active': isAnchorActive(animation.anchors),
-            }"
-            @click="handleAnchor(animation)"
-          ></span>
+<!--          <span-->
+<!--            :class="{-->
+<!--              'widget__anchor': true,-->
+<!--              'widget__anchor&#45;&#45;active': isAnchorActive(animation.anchors),-->
+<!--            }"-->
+<!--            @click="handleAnchor(animation)"-->
+<!--          ></span>-->
 
-          <svg-icon icon-name="right" @click="handleRight(animation)" />
-        </div>
-      </div>
+<!--          <svg-icon icon-name="right" @click="handleRight(animation)" />-->
+<!--        </div>-->
+<!--      </div>-->
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import {
-  computed, ref, reactive, watch,
+  computed, ref, reactive,
   defineComponent, toRefs,
 } from 'vue-demi';
 import clonedeep from 'lodash.clonedeep';
@@ -95,10 +104,12 @@ import { ANIMATION_TYPES } from '@/utils/constant.ts';
 import { Anchor, AnimationType } from '@/utils/types.ts';
 import { debouncedWatch } from '@vueuse/core';
 import SvgIcon from './SvgIcon.vue';
+import Prop from './Prop.vue';
 
 export default defineComponent({
   components: {
     SvgIcon,
+    Prop,
   },
   props: {
     option: {
@@ -125,17 +136,8 @@ export default defineComponent({
     const isExpanded = computed(() => option.value.isExpanded);
     const isLocked = computed(() => option.value.isLocked);
     const animations = computed(() => option.value.animations);
-    const temporaryValues: any = ref({});
-
-    watch(animations, (val) => {
-      const options = val.reduce((acc: any, cur: any) => ({ ...acc, [cur.prop]: cur.value }), {});
-      Object.assign(options, temporaryValues.value);
-      temporaryValues.value = options;
-    });
 
     const isActive = (prop: string) => animations.value.find((animation: AnimationType) => animation.prop === prop);
-
-    const isAnchorActive = (anchors: Anchor[]) => anchors.some((anchor: Anchor) => anchor.time === time.value);
 
     const handleShowAnimations = () => {
       isShowAnimations.value = !isShowAnimations.value;
@@ -151,7 +153,8 @@ export default defineComponent({
         if (propList.includes(animationType.prop)) {
           Object.assign(animationType, { value: option.value[animationType.prop] });
         }
-        animations.value.push(reactive(animationType));
+        const { anchors, prop } = animationType;
+        animations.value.push(reactive({ anchors, prop }));
       } else {
         const index = animations.value.findIndex(
           (animation: AnimationType) => animation.prop === target.prop,
@@ -257,7 +260,7 @@ export default defineComponent({
         animations.value.forEach((animation: any) => {
           const anchor = animation.anchors.find((item: any) => item.time === newTime);
           if (anchor) {
-            temporaryValues.value[animation.prop] = anchor.value;
+            console.log('anchor');
           }
         });
       }
@@ -271,7 +274,6 @@ export default defineComponent({
       isShowAnimations,
       animations,
       animationTypes,
-      temporaryValues,
       isActive,
       handleVisible,
       handleLocked,
@@ -284,7 +286,6 @@ export default defineComponent({
       handleLeft,
       handleRight,
       handleAnchor,
-      isAnchorActive,
     };
   },
 });
@@ -419,86 +420,6 @@ export default defineComponent({
       svg {
         color: rgba(0, 0, 0, 1);
       }
-    }
-  }
-
-  &__row {
-    flex: none;
-    display: flex;
-    flex-flow: row nowrap;
-    justify-content: flex-start;
-    align-items: center;
-    height: 32px;
-    box-sizing: border-box;
-    padding: 0 12px;
-    background: whitesmoke;
-    border-bottom: 1px solid #fafafa;
-
-    svg {
-      cursor: pointer;
-      color: rgba(0, 0, 0, .56);
-
-      &:hover {
-        color: rgba(0, 0, 0, 1);
-      }
-    }
-
-    p {
-      flex: none;
-      font-size: 12px;
-      width: 56px;
-      text-align: right;
-      margin: 0;
-    }
-
-    input {
-      flex: none;
-      width: 40px;
-      border: none;
-      outline: none;
-      font-size: 12px;
-      //cursor: ew-resize;
-      border-top: 1px solid transparent;
-      border-bottom: 1px solid rgba(0, 0, 0, .12);
-      margin: 0 12px;
-      background: transparent;
-    }
-  }
-
-  &__control {
-    display: flex;
-    flex-flow: row nowrap;
-    justify-content: space-around;
-    align-items: center;
-    width: 100%;
-    margin-left: 6px;
-
-    svg {
-      font-size: 10px;
-    }
-  }
-
-  &__anchor {
-    width: 5px;
-    height: 5px;
-    border: 1px solid rgba(0, 0, 0, .56);
-    transform: rotate(45deg);
-    cursor: pointer;
-    box-sizing: content-box;
-
-    &:hover {
-      border: 1px solid rgba(0, 0, 0, 1);
-    }
-
-    &--active {
-      background: black;
-    }
-  }
-
-  &__icon {
-
-    &--active {
-      background: black;
     }
   }
 }
