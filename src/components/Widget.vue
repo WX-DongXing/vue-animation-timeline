@@ -48,48 +48,9 @@
         :time="time"
         :animation="animation"
         @remove="handleRemove"
-        @left="handleLeft"
-        @anchor="handleAnchor"
-        @right="handleRight"
+        @update="handleUpdate"
+        @timeUpdate="handleTimeUpdate"
       />
-<!--      <div-->
-<!--        class="widget__row"-->
-<!--        v-for="animation in animations"-->
-<!--        :key="animation.prop"-->
-<!--      >-->
-<!--        <svg-icon icon-name="close" @click="handleRemove(animation)" />-->
-
-<!--        <span class="widget__divider"></span>-->
-
-<!--        <p>{{ animation.name }}</p>-->
-
-<!--        <input-->
-<!--          type="text"-->
-<!--          v-model.number="animation.value"-->
-<!--          ref="input"-->
-<!--          @input="(event) => handleInput(event, animation)"-->
-<!--        >-->
-
-<!--        <svg-icon-->
-<!--          :class="{'widget__icon&#45;&#45;active': animation.curve && isAnchorActive(animation.anchors)}"-->
-<!--          icon-name="all"-->
-<!--          @click="handleCurve"-->
-<!--        />-->
-
-<!--        <div class="widget__control">-->
-<!--          <svg-icon icon-name="left" @click="handleLeft(animation)" />-->
-
-<!--          <span-->
-<!--            :class="{-->
-<!--              'widget__anchor': true,-->
-<!--              'widget__anchor&#45;&#45;active': isAnchorActive(animation.anchors),-->
-<!--            }"-->
-<!--            @click="handleAnchor(animation)"-->
-<!--          ></span>-->
-
-<!--          <svg-icon icon-name="right" @click="handleRight(animation)" />-->
-<!--        </div>-->
-<!--      </div>-->
     </div>
   </div>
 </template>
@@ -101,8 +62,7 @@ import {
 } from 'vue-demi';
 import clonedeep from 'lodash.clonedeep';
 import { ANIMATION_TYPES } from '@/utils/constant.ts';
-import { Anchor, AnimationType } from '@/utils/types.ts';
-import { debouncedWatch } from '@vueuse/core';
+import { AnimationType } from '@/utils/types.ts';
 import SvgIcon from './SvgIcon.vue';
 import Prop from './Prop.vue';
 
@@ -128,7 +88,7 @@ export default defineComponent({
     },
   },
   setup(props, { emit }) {
-    const { option, time, id } = toRefs(props);
+    const { option, id } = toRefs(props);
     const animationTypes = reactive(clonedeep(ANIMATION_TYPES));
     const isShowAnimations = ref(false);
     const name = computed(() => option.value.name);
@@ -138,6 +98,14 @@ export default defineComponent({
     const animations = computed(() => option.value.animations);
 
     const isActive = (prop: string) => animations.value.find((animation: AnimationType) => animation.prop === prop);
+
+    const handleUpdate = () => {
+      emit('update', { transition: option.value, key: id?.value });
+    };
+
+    const handleTimeUpdate = (t: number) => {
+      emit('timeUpdate', t);
+    };
 
     const handleShowAnimations = () => {
       isShowAnimations.value = !isShowAnimations.value;
@@ -161,7 +129,7 @@ export default defineComponent({
         );
         animations.value.splice(index, 1);
       }
-      emit('update', { transition: option.value, key: id?.value });
+      handleUpdate();
     };
 
     const handleVisible = () => {
@@ -171,12 +139,12 @@ export default defineComponent({
 
     const handleLocked = () => {
       option.value.isLocked = !option.value.isLocked;
-      emit('update', { transition: option.value, key: id?.value });
+      handleUpdate();
     };
 
     const handleExpanded = () => {
       option.value.isExpanded = !option.value.isExpanded;
-      emit('update', { transition: option.value, key: id?.value });
+      handleUpdate();
     };
 
     const handleRemove = ({ prop }: AnimationType) => {
@@ -184,87 +152,8 @@ export default defineComponent({
       const defaultAnimationType = ANIMATION_TYPES.find((animationType) => animationType.prop === animations.value[index].type);
       Object.assign(animations.value[index], defaultAnimationType);
       animations.value.splice(index, 1);
-      emit('update', { transition: option.value, key: id?.value });
+      handleUpdate();
     };
-
-    const handleCurve = ({ prop }: AnimationType) => {
-      console.log(prop);
-    };
-
-    const handleInput = ({ target }: any, { anchors }: AnimationType) => {
-      const index = anchors.findIndex((anchor: Anchor) => anchor.time === time.value);
-      if (index !== -1) {
-        const anchor: Anchor = anchors[index];
-        anchors.splice(index, 1, { ...anchor, value: +target.value });
-      }
-      emit('update', { transition: option.value, key: id?.value });
-    };
-
-    const handleLeft = (animation: AnimationType) => {
-      const { anchors } = animation;
-      if (anchors.length === 0) return;
-      const minAnchorTime = anchors[0].time;
-      if (minAnchorTime >= time.value) {
-        return;
-      }
-      const lastAnchor = anchors[anchors.length - 1];
-      if (lastAnchor.time < time.value) {
-        emit('timeUpdate', lastAnchor.time);
-        return;
-      }
-
-      for (const index in anchors) {
-        if (anchors[index].time >= time.value) {
-          const preAnchor = anchors[+index - 1];
-          !!preAnchor && emit('timeUpdate', preAnchor.time);
-          break;
-        }
-      }
-    };
-
-    const handleRight = (animation: AnimationType) => {
-      const { anchors } = animation;
-      if (anchors.length === 0) return;
-      const maxAnchorTime = animation.anchors[anchors.length - 1].time;
-      if (maxAnchorTime <= time.value) {
-        return;
-      }
-
-      for (const index in anchors) {
-        if (anchors[index].time === time.value) {
-          const nextAnchor = anchors[+index + 1];
-          !!nextAnchor && emit('timeUpdate', nextAnchor.time);
-          break;
-        }
-
-        if (anchors[index].time > time.value) {
-          emit('timeUpdate', anchors[index].time);
-          break;
-        }
-      }
-    };
-
-    const handleAnchor = ({ anchors, value }: AnimationType) => {
-      const index = anchors.findIndex((anchor: Anchor) => anchor.time === time.value);
-      if (index === -1) {
-        anchors.push({ time: time.value, value });
-        anchors.sort((anchorA: Anchor, anchorB: Anchor) => anchorA.time - anchorB.time);
-      } else {
-        anchors.splice(index, 1);
-      }
-      emit('update', { transition: option.value, key: id?.value });
-    };
-
-    debouncedWatch(time, (newTime) => {
-      if (animations.value.length) {
-        animations.value.forEach((animation: any) => {
-          const anchor = animation.anchors.find((item: any) => item.time === newTime);
-          if (anchor) {
-            console.log('anchor');
-          }
-        });
-      }
-    }, { debounce: 100 });
 
     return {
       name,
@@ -281,11 +170,8 @@ export default defineComponent({
       handleShowAnimations,
       handleSelectAnimation,
       handleRemove,
-      handleCurve,
-      handleInput,
-      handleLeft,
-      handleRight,
-      handleAnchor,
+      handleUpdate,
+      handleTimeUpdate,
     };
   },
 });

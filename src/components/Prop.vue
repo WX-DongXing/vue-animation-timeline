@@ -1,44 +1,47 @@
 <template>
-  <div class="prop">
-    <svg-icon icon-name="close" @click="$emit('remove', animate)" />
+  <div class="prop" v-if="animationProp">
+    <svg-icon icon-name="close" @click="$emit('remove', animationProp)" />
 
     <span class="prop__divider"></span>
 
-    <p>{{ animate.name }}</p>
+    <p>{{ animationProp.name }}</p>
 
     <input
       type="text"
-      v-model.number="animate.value"
+      v-model.number="value"
       ref="input"
       @input="handleInput"
     >
 
     <svg-icon
-      :class="{'prop__icon--active': animate.curve && isAnchorActive(animate.anchors)}"
+      :class="{'prop__icon--active': animationProp.curve && isAnchorActive(animation.anchors)}"
       icon-name="all"
       @click="handleCurve"
     />
 
     <div class="prop__control">
-      <svg-icon icon-name="left" @click="$emit('left', animate)" />
+      <svg-icon icon-name="left" @click="handleLeft" />
 
       <span
         :class="{
               'prop__anchor': true,
-              'prop__anchor--active': isAnchorActive(animate.anchors),
+              'prop__anchor--active': isAnchorActive(animation.anchors),
             }"
-        @click="$emit('anchor', animate)"
+        @click="handleAnchor"
       ></span>
 
-      <svg-icon icon-name="right" @click="$emit('right', animate)" />
+      <svg-icon icon-name="right" @click="handleRight" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { computed, ref, toRefs } from 'vue-demi';
+import {
+  ref, toRefs,
+} from 'vue-demi';
 import { Anchor, AnimationType } from '@/utils/types.ts';
 import { ANIMATION_TYPES } from '@/utils/constant';
+import { debouncedWatch } from '@vueuse/core';
 import SvgIcon from './SvgIcon.vue';
 
 export default {
@@ -58,23 +61,25 @@ export default {
   },
   setup(props: any, { emit }: any) {
     const { animation, time } = toRefs(props);
-    const animate = computed(() => {
-      const defaultAnimationType = ANIMATION_TYPES.find((animationType) => animationType.prop === animation.value.prop);
-      return { ...defaultAnimationType, ...animation.value };
-    });
+    const animationProp: any = ref(ANIMATION_TYPES.find((animationType) => animationType.prop === animation.value.prop));
 
-    const value = ref('');
+    const value = ref(animationProp ? animationProp.value.value : 0);
 
     const isActive = (prop: string) => animation.value.find((type: AnimationType) => type.prop === prop);
 
     const isAnchorActive = (anchors: Anchor[]) => anchors.some((anchor: Anchor) => anchor.time === time.value);
 
-    const handleInput = (event: Event) => {
-      console.log('input: ', event);
+    const handleInput = (event: any) => {
+      const index = animation.value.anchors.findIndex((anchor: Anchor) => +anchor.time === +time.value);
+      if (index !== -1) {
+        const anchor: Anchor = animation.value.anchors[index];
+        animation.value.anchors.splice(index, 1, { ...anchor, value: +event.target.value });
+      }
+      emit('update');
     };
 
     const handleCurve = () => {
-      console.log('remove');
+      console.log('curve');
     };
 
     const handleLeft = () => {
@@ -100,16 +105,47 @@ export default {
     };
 
     const handleAnchor = () => {
-      console.log('remove');
+      animation.value.anchors.push({
+        time: time.value,
+        value: value.value,
+      });
+      emit('update');
     };
 
     const handleRight = () => {
-      console.log('remove');
+      const { anchors } = animation.value;
+      if (anchors.length === 0) return;
+      const maxAnchorTime = anchors[anchors.length - 1].time;
+      if (maxAnchorTime <= time.value) {
+        return;
+      }
+
+      for (const index in anchors) {
+        if (anchors[index].time === time.value) {
+          const nextAnchor = anchors[+index + 1];
+          !!nextAnchor && emit('timeUpdate', nextAnchor.time);
+          break;
+        }
+
+        if (anchors[index].time > time.value) {
+          emit('timeUpdate', anchors[index].time);
+          break;
+        }
+      }
     };
+
+    debouncedWatch(time, (newTime) => {
+      if (animation.value.anchors.length) {
+        const anchor = animation.value.anchors.find((item: any) => item.time === newTime);
+        if (anchor) {
+          value.value = anchor.value;
+        }
+      }
+    }, { debounce: 100 });
 
     return {
       value,
-      animate,
+      animationProp,
       isActive,
       isAnchorActive,
       handleInput,
