@@ -105,10 +105,14 @@ export default {
     };
 
     const handleAnchor = () => {
-      animation.value.anchors.push({
-        time: time.value,
-        value: value.value,
-      });
+      const { anchors } = animation.value;
+      const index = anchors.findIndex((anchor: Anchor) => anchor.time === time.value);
+      if (index === -1) {
+        anchors.push({ time: time.value, value: value.value });
+        anchors.sort((anchorA: Anchor, anchorB: Anchor) => anchorA.time - anchorB.time);
+      } else {
+        anchors.splice(index, 1);
+      }
       emit('update');
     };
 
