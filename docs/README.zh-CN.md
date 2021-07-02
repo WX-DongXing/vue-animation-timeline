@@ -155,7 +155,7 @@ export default defineComponent({
 | left   | 元素绝对定位left字段映射，默认为 'left' |
 
 ### 实例属性
-##### `animate`: 动画实例对象
+##### `$animate`: 动画实例对象
 
 | 方法     | 描述                  |
 |--------|---------------------|
@@ -164,8 +164,21 @@ export default defineComponent({
 | restart | 动画重新开始执行     |
 | seek    | 执行动画到具体时刻，如 animate.seek(1000): 将动画执行至1s位置  |
 
-### 事件
-##### `onUpdate`: 配置动画时更新对象，参数为已经添加动画配置的`widgets`数组
+### Shortcut Key
+
+| Key    | Description                  |
+|--------|---------------------|
+| space  |  开始、暂停             |
+| ⌘ + backspace  | 暂停并返回至开始    |
+| ⌘ + enter | 重新开始动画     |
+| ←  |  减少 20ms |
+| →  | 增加 20ms |
+| control + shift + ←  | 跳转至上一个标记点 |
+| control + shift + → | 跳转至下一个标记点 |
+
+### Event
+##### `onUpdate`: 更新当前对象
+##### `onSelect`: 选择当前对象
 
 ## 证书
 [MIT](http://opensource.org/licenses/MIT)

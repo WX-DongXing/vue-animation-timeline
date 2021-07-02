@@ -28,14 +28,14 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "reinstall": "yarn add vue vue-demi vue-template-compiler",
+    "reinstall": "rm -rf node_modules && yarn add vue vue-demi && yarn add vue-template-compiler -D",
     "build-lib": "vue-cli-service build --mode lib --target lib --name vue-animation-timeline src/index.ts",
-    "build-lib3": "yarn add vue@next vue-demi && yarn add @vue/compiler-sfc -D && yarn build-lib"
+    "build-lib3": "rm -rf node_modules && yarn add vue@next vue-demi && yarn add @vue/compiler-sfc -D && yarn build-lib"
   },
   "dependencies": {
     "@antv/g-canvas": "^0.4.15",
     "@types/keymaster": "^1.6.28",
-    "@vue/composition-api": "^1.0.0-rc.12",
+    "@vue/composition-api": "^1.0.0-rc.13",
     "@vueuse/core": "^5.0.3",
     "animejs": "^3.2.1",
     "core-js": "^3.6.5",

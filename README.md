@@ -155,17 +155,30 @@ export default defineComponent({
 | left   | Absolute positioning left field mapping，default 'left' |
 
 ### Instance Properties
-##### `animate`: animate instance
+##### `$animate`: animate instance
 
 | Function     | Description                  |
 |--------|---------------------|
-|  play  | Execute animation               |
+| play  | Execute animation               |
 | pause  | Pause animation    |
 | restart | Restart animation     |
 | seek    | Execute animation to a given time，example animate.seek(1000): execute animation to 1s  |
 
+### Shortcut Key
+
+| Key    | Description                  |
+|--------|---------------------|
+| space  |  Play And Pause             |
+| ⌘ + backspace  | Back    |
+| ⌘ + enter | Restart     |
+| ←  |  Decrease 20ms |
+| →  | Increase 20ms |
+| control + shift + ←  | Jump To Previous Anchor |
+| control + shift + → | Jump To Next Anchor |
+
 ### Event
-##### `onUpdate`: Update widgets configs，The parameter is the `widgets` array to which the animation configuration has been added
+##### `onUpdate`: Update current widget configs
+##### `onSelect`: Select current widget
 
 ## License
 [MIT](http://opensource.org/licenses/MIT)
