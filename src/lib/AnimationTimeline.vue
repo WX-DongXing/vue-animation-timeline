@@ -114,7 +114,7 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const instance = getCurrentInstance();
-    const ctx = instance.ctx || instance;
+    const ctx = instance.proxy || instance;
     const { widgets, fields } = toRefs(props);
     const { rect, resize } = useResize();
     const fieldMap = reactive({
@@ -122,9 +122,6 @@ export default defineComponent({
     });
 
     const options = ref([]);
-
-    // set unique identification field
-    ctx.$animateParams.keyField = fieldMap.key;
 
     const state = reactive({
       key: fieldMap.key,

@@ -138,7 +138,7 @@ export default {
       }
     };
 
-    debouncedWatch(time, (newTime) => {
+    debouncedWatch(time, (newTime: number) => {
       if (animation.value.anchors.length) {
         const anchor = animation.value.anchors.find((item: any) => item.time === newTime);
         if (anchor) {

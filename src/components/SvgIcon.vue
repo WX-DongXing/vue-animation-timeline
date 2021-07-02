@@ -10,7 +10,7 @@
   </svg>
 </template>
 
-<script>
+<script lang="ts">
 import { defineComponent, toRefs, computed } from 'vue-demi';
 
 export default defineComponent({
